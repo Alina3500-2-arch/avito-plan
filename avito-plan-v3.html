@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Авитолог — Рабочий план</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F6F4F0;--white:#FDFCFA;--ink:#1C1C1A;--ink2:#4A4845;--ink3:#9A9690;
+  --line:#E0DDD7;--g:#2A5C24;--gl:#E8F0E6;--gm:rgba(42,92,36,.15);
+  --o:#B85A18;--ol:#FBF0E8;--om:rgba(184,90,24,.2);--r:10px
+}
+body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.55}
+.page{max-width:700px;margin:0 auto;padding:0 16px 80px}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:rgba(246,244,240,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.nav-inner{display:flex;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.nav-inner::-webkit-scrollbar{display:none}
+.nb{flex-shrink:0;padding:13px 16px;font-size:13px;font-weight:500;color:var(--ink3);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.nb.on{color:var(--g);border-bottom-color:var(--g);font-weight:700}
+
+/* SCREENS */
+.sc{display:none;padding-top:28px}.sc.on{display:block}
+
+/* HERO */
+.hero{padding:28px 0 22px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
+h1{font-size:clamp(26px,7vw,40px);font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:10px}
+h2{font-size:18px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+h3{font-size:15px;font-weight:700;margin-bottom:8px}
+.tags{display:flex;gap:8px;flex-wrap:wrap}
+.tag{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid var(--line);color:var(--ink3)}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-bottom:10px}
+.card-g{background:var(--gl);border-color:var(--gm)}
+.card-o{background:var(--ol);border-color:var(--om)}
+.div{height:1px;background:var(--line);margin:14px 0}
+
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+@media(max-width:440px){.g2,.g3{grid-template-columns:1fr}}
+
+/* STAT */
+.sn{font-size:30px;font-weight:800;letter-spacing:-.03em;color:var(--g)}
+.sl{font-size:12px;color:var(--ink3);margin-top:2px;line-height:1.3}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);padding:0 0 10px;border-bottom:1px solid var(--line)}
+.tbl td{padding:11px 0;font-size:14px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+.tbl tr:last-child td{border-bottom:none}
+.tbl td+td{padding-left:12px}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px}
+.bg{background:var(--gl);color:var(--g)}.bo{background:var(--ol);color:var(--o)}.br{background:#FEE;color:#C02020}
+
+/* CHECKLIST */
+.cl{list-style:none}
+.cl li{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;color:var(--ink2)}
+.cl li:last-child{border-bottom:none}
+.cb{width:20px;height:20px;border-radius:5px;border:2px solid var(--line);flex-shrink:0;cursor:pointer;margin-top:2px;transition:all .15s;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.cb.done{background:var(--g);border-color:var(--g)}
+.cb.done::after{content:'✓';color:white;font-size:11px;font-weight:900}
+.ct{flex:1}
+.ctd{text-decoration:line-through;color:var(--ink3)}
+.cw{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:3px}
+.wa{color:var(--g)}.ws{color:var(--o)}
+
+/* STEP */
+.step{display:flex;gap:14px;align-items:flex-start}
+.snum{width:26px;height:26px;border-radius:50%;background:var(--ink);color:white;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:3px}
+.sbody{flex:1;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.step:last-child .sbody{border-bottom:none;padding-bottom:0}
+.stitle{font-size:15px;font-weight:700;margin-bottom:3px}
+.sdesc{font-size:13px;color:var(--ink2);line-height:1.55}
+
+/* TEMPLATE */
+.tmpl{background:#F0EDE8;border-left:3px solid var(--g);border-radius:0 8px 8px 0;padding:14px 16px;margin:10px 0;font-size:13px;color:var(--ink2);font-family:'Courier New',monospace;white-space:pre-wrap;line-height:1.65}
+
+/* COLLAPSE */
+.ctrig{width:100%;background:none;border:none;text-align:left;cursor:pointer;padding:0;display:flex;justify-content:space-between;align-items:center;-webkit-tap-highlight-color:transparent}
+.carr{font-size:18px;color:var(--ink3);transition:transform .2s}
+.carr.open{transform:rotate(180deg)}
+.cbody{display:none;margin-top:14px}
+.cbody.open{display:block}
+
+/* WEEK TABS */
+.wtabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.wt{padding:7px 14px;border-radius:6px;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--white);color:var(--ink3);cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent}
+.wt.on{background:var(--ink);color:white;border-color:var(--ink)}
+.wc{display:none}.wc.on{display:block}
+
+/* PROGRESS */
+.pbar{height:6px;background:var(--line);border-radius:3px;margin-top:8px;overflow:hidden}
+.pfill{height:100%;background:var(--g);border-radius:3px;transition:width .4s}
+
+/* ROLES */
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+@media(max-width:420px){.roles{grid-template-columns:1fr}}
+.rc{border-radius:var(--r);padding:16px 18px}
+.ra{background:var(--gl);border:1px solid var(--gm)}
+.rs{background:var(--ol);border:1px solid var(--om)}
+.rname{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.rna{color:var(--g)}.rns{color:var(--o)}
+.rl{list-style:none;font-size:13px;color:var(--ink2);line-height:2}
+
+/* WHY */
+.wi-row{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+.wi-row:last-child{border-bottom:none}
+.wi{width:32px;height:32px;border-radius:8px;background:#F0EDE8;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.wt2{font-size:14px;color:var(--ink2);line-height:1.55}
+.wt2 b{color:var(--ink)}
+
+/* TIMELINE */
+.tl{position:relative;padding-left:24px}
+.tl::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:1px;background:var(--line)}
+.tl-item{position:relative;margin-bottom:16px}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-20px;top:4px;width:14px;height:14px;border-radius:50%;background:var(--white);border:2px solid var(--line)}
+.tl-dot.on{background:var(--g);border-color:var(--g)}
+.tl-dot.now{background:var(--o);border-color:var(--o)}
+.tl-label{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.tl-title{font-size:14px;font-weight:700;margin-bottom:2px}
+.tl-sub{font-size:13px;color:var(--ink2)}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-inner">
+    <button class="nb on" onclick="go('why')">Почему</button>
+    <button class="nb" onclick="go('plan')">План</button>
+    <button class="nb" onclick="go('compete')">Разведка</button>
+    <button class="nb" onclick="go('roles')">Роли</button>
+    <button class="nb" onclick="go('finance')">Деньги</button>
+    <button class="nb" onclick="go('call')">Созвон</button>
+  </div>
+</nav>
+
+<div class="page">
+
+<!-- ══ ПОЧЕМУ ══ -->
+<div class="sc on" id="why">
+  <div class="hero">
+    <div class="eyebrow">Объясняем Саше</div>
+    <h1>Почему мы стартуем как авитологи</h1>
+    <div class="tags" style="margin-top:10px">
+      <span class="tag">Июнь 2026</span><span class="tag">Казань</span><span class="tag">Алина + Саша</span>
+    </div>
+  </div>
+
+  <div class="card card-g">
+    <h3 style="margin-bottom:4px">Суть в одной фразе</h3>
+    <div style="font-size:14px;color:var(--ink2);line-height:1.65">Мы помогаем малому бизнесу получать клиентов через Авито — делаем профиль, объявления, стратегию. Клиенты находят нас сами через наши же объявления на Авито. Никаких холодных обзвонов на старте.</div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <h3 style="margin-bottom:14px">Почему именно это</h3>
+    <div class="wi-row"><div class="wi">⚡</div><div class="wt2"><b>Старт за 1 неделю.</b> Создаём профиль, размещаем объявления — и ждём заявки. Никаких месяцев подготовки.</div></div>
+    <div class="wi-row"><div class="wi">🎯</div><div class="wt2"><b>Навыки уже есть.</b> Я делала это для ECO-STORE и Виктора-сантехника. Не учимся с нуля — монетизируем то что уже умеем.</div></div>
+    <div class="wi-row"><div class="wi">📈</div><div class="wt2"><b>Рынок растёт.</b> Бизнесы массово заходят на Авито, но большинство не умеют оформлять профиль. Спрос на авитологов высокий.</div></div>
+    <div class="wi-row"><div class="wi">💸</div><div class="wt2"><b>Вложения — ноль.</b> Нет офиса, команды, рекламного бюджета. Только время.</div></div>
+    <div class="wi-row"><div class="wi">🔁</div><div class="wt2"><b>Масштабируется.</b> Авитолог → CRM → сайты → систематизация. Это первый шаг, не тупик.</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <h3 style="margin-bottom:14px">Мои кейсы — уже есть результат</h3>
+    <div style="background:var(--gl);border-radius:8px;padding:14px 16px;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--g);margin-bottom:6px">Виктор — сантехник, Казань</div>
+      <div style="font-size:14px;color:var(--ink2);line-height:1.65">Было 1 общее объявление, почти без обращений. Я разбила по направлениям — сделала 12 объявлений, оформила профиль, написала тексты, сделала фото через ИИ. <b>За 3 дня обращений стало больше, чем за весь предыдущий месяц.</b> Чек: 6 000 ₽.</div>
+    </div>
+    <div style="background:#F0EDE8;border-radius:8px;padding:14px 16px">
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:6px">ECO-STORE — мох панно, фитодизайн</div>
+      <div style="font-size:14px;color:var(--ink2);line-height:1.65">Работала с Авито как часть операционки компании — CRM, воронки, объявления, аналитика. Понимаю площадку изнутри, не теоретически.</div>
+    </div>
+    <div style="font-size:13px;color:var(--ink3);margin-top:12px">Портфолио есть. Не стартуем с нуля.</div>
+  </div>
+
+  <div class="card card-o">
+    <h3 style="margin-bottom:6px">Цель и критерий</h3>
+    <div style="font-size:14px;color:var(--ink2);line-height:1.65"><b>40 000 ₽ чистыми на двоих за 4 недели.</b><br><br>Не строим агентство. Не нанимаем людей. Проверяем спрос и берём деньги. Если к концу августа денег нет — честно признаём и меняем гипотезу.</div>
+  </div>
+</div>
+
+<!-- ══ ПЛАН ══ -->
+<div class="sc" id="plan">
+  <div class="hero">
+    <div class="eyebrow">15 июня — 13 июля</div>
+    <h1>4 недели до 40к</h1>
+  </div>
+
+  <div style="margin-bottom:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:13px;font-weight:700">Прогресс</div>
+      <div id="ptxt" style="font-size:13px;color:var(--ink3)">0 / 0</div>
+    </div>
+    <div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div>
+  </div>
+
+  <div class="wtabs">
+    <button class="wt on" onclick="sw('w1')">Нед. 1</button>
+    <button class="wt" onclick="sw('w2')">Нед. 2</button>
+    <button class="wt" onclick="sw('w3')">Нед. 3</button>
+    <button class="wt" onclick="sw('w4')">Нед. 4</button>
+  </div>
+
+  <!-- Неделя 1: 15–22 -->
+  <div class="wc on" id="w1">
+    <div class="card card-o" style="margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--o);margin-bottom:4px">15 июня (пн) — Созвон</div>
+      <div style="font-size:13px;color:var(--ink3)">Согласовываем, раздаём задачи, расходимся</div>
+    </div>
+    <div class="card" style="margin-bottom:8px">
+      <div class="eyebrow" style="margin-bottom:12px">Саша · 16–19 июня · Конкурентная разведка</div>
+      <ul class="cl">
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Разведка 10 авитологов-конкурентов под прикрытием — цены, офферы, условия (инструкция → вкладка "Разведка")</div>
+            <div class="cw ws">Саша · до 17 июня</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Найти 15 бизнесов с плохим Авито в Казани (ремонт, клининг, грузоперевозки) — таблица со ссылками и что именно плохо</div>
+            <div class="cw ws">Саша · до 19 июня</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Обе таблицы отправить мне</div>
+            <div class="cw ws">Саша · 19 июня (пятница)</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="card" style="margin-bottom:8px">
+      <div class="eyebrow" style="margin-bottom:12px">Я · 20–22 июня · Запуск профиля</div>
+      <ul class="cl">
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Изучить таблицы Саши → сформулировать УТП</div>
+            <div class="cw wa">Я · 20 июня (пятница)</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Создать профиль авитолога на Авито</div>
+            <div class="cw wa">Я · 21 июня (сб)</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Разместить 2 объявления по продвижению на Авито</div>
+            <div class="cw wa">Я · 21–22 июня (сб–вс)</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="card card-g">
+      <div style="font-size:13px;font-weight:700;color:var(--g)">✓ Итог недели 1</div>
+      <div style="font-size:13px;color:var(--ink2);margin-top:4px">Профиль живёт. 2 объявления на Авито. Таблицы конкурентов и клиентов готовы.</div>
+    </div>
+  </div>
+
+  <!-- Неделя 2: 23–29 -->
+  <div class="wc" id="w2">
+    <div class="card card-o" style="margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--o);margin-bottom:4px">22 июня (вс) — Созвон №2</div>
+      <div style="font-size:13px;color:var(--ink3)">Смотрим первые просмотры, ставим задачи на неделю</div>
+    </div>
+    <div class="card" style="margin-bottom:8px">
+      <div class="eyebrow" style="margin-bottom:12px">Я · 23–24 июня</div>
+      <ul class="cl">
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Разместить ещё 2 объявления (итого 4 на Авито)</div>
+            <div class="cw wa">Я · 23–24 июня</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Обрабатывать все входящие заявки с объявлений — ежедневно</div>
+            <div class="cw wa">Я · постоянно</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="card" style="margin-bottom:8px">
+      <div class="eyebrow" style="margin-bottom:12px">Саша · 23–29 июня · Первые касания</div>
+      <ul class="cl">
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Писать бизнесам из таблицы по шаблону — <b>5–7 сообщений в день</b>, каждое немного разное (инструкция → вкладка "Разведка")</div>
+            <div class="cw ws">Саша · 23–29 июня</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Все ответы сразу передавать мне — не вести переговоры самому</div>
+            <div class="cw ws">Саша · постоянно</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Продолжать мониторинг авитологов-конкурентов: новые цены, акции, офферы</div>
+            <div class="cw ws">Саша · раз в 2–3 дня</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="card card-g">
+      <div style="font-size:13px;font-weight:700;color:var(--g)">✓ Итог недели 2</div>
+      <div style="font-size:13px;color:var(--ink2);margin-top:4px">4 объявления живут. Отправлено ~35–40 сообщений. Ожидаем 5–7 ответов → 1–2 тёплых разговора.</div>
+    </div>
+  </div>
+
+  <!-- Неделя 3: 30–6 -->
+  <div class="wc" id="w3">
+    <div class="card card-o" style="margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--o);margin-bottom:4px">29 июня (вс) — Созвон №3</div>
+      <div style="font-size:13px;color:var(--ink3)">Первые деньги или чёткое понимание почему нет</div>
+    </div>
+    <div class="card card-g" style="margin-bottom:8px">
+      <h3 style="margin-bottom:6px">Цель недели 3</h3>
+      <div style="font-size:14px;color:var(--ink2);line-height:1.65"><b>Закрыть первого платящего клиента.</b><br>Я веду переговоры с тёплыми контактами. Саша продолжает писать по 5–7 в день.</div>
+    </div>
+    <div class="card" style="margin-bottom:8px">
+      <ul class="cl">
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Мне: закрыть 1 клиента на упаковку (15–20к)</div>
+            <div class="cw wa">Я</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Мне: выполнить работу — профиль + объявления клиента</div>
+            <div class="cw wa">Я</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Саша: продолжает писать потенциальным клиентам (~35 сообщений за неделю)</div>
+            <div class="cw ws">Саша</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Саша: после сдачи работы Алиной — берёт клиента на ведение (мониторинг, обновления)</div>
+            <div class="cw ws">Саша</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Неделя 4: 7–13 -->
+  <div class="wc" id="w4">
+    <div class="card card-o" style="margin-bottom:8px">
+      <div style="font-size:13px;font-weight:700;color:var(--o);margin-bottom:4px">6 июля (вс) — Созвон №4</div>
+      <div style="font-size:13px;color:var(--ink3)">Считаем деньги. Решаем: масштабируем или корректируем</div>
+    </div>
+    <div class="card card-g" style="margin-bottom:8px">
+      <h3 style="margin-bottom:6px">Цель недели 4</h3>
+      <div style="font-size:14px;color:var(--ink2);line-height:1.65"><b>40 000 ₽ чистыми на двоих.</b><br><br>Алина: 2 клиента на упаковку = 30–40к<br>Саша: 2–3 клиента на ведение = 16–24к/мес (его постоянный доход)</div>
+    </div>
+    <div class="card" style="margin-bottom:8px">
+      <ul class="cl">
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Закрыть второго клиента на упаковку</div>
+            <div class="cw wa">Я</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Получить оплату — зафиксировать первые деньги</div>
+            <div class="cw" style="color:var(--ink3)">Оба</div>
+          </div>
+        </li>
+        <li>
+          <div class="cb" onclick="tog(this)"></div>
+          <div class="ct">
+            <div>Решить: продолжаем в этой нише или добавляем новую?</div>
+            <div class="cw" style="color:var(--ink3)">Оба</div>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div class="card card-o">
+      <h3 style="margin-bottom:6px">Если 40к не получилось</h3>
+      <div style="font-size:14px;color:var(--ink2);line-height:1.65">Честно разбираем: где сломалась воронка — нет трафика на объявления, нет ответов на сообщения, или нет закрытия в оплату. Фиксируем и исправляем. Не меняем нишу — меняем конкретный слабый элемент.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ РАЗВЕДКА ══ -->
+<div class="sc" id="compete">
+  <div class="hero">
+    <div class="eyebrow">Задача Саши · 16–19 июня</div>
+    <h1>Конкурентная разведка</h1>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <button class="ctrig" onclick="ct(this)">
+      <h2 style="margin:0;font-size:17px">Часть 1 — Разведка авитологов</h2>
+      <span class="carr open">▾</span>
+    </button>
+    <div class="cbody open">
+      <div style="font-size:13px;color:var(--ink3);margin:10px 0">Саша прикидывается клиентом и пишет конкурентам. Цель — узнать их цены, что входит, как продают. На основе этого Алина сформирует наше УТП.</div>
+      <div class="step" style="margin-bottom:16px">
+        <div class="snum">1</div>
+        <div class="sbody">
+          <div class="stitle">Найди 10 авитологов</div>
+          <div class="sdesc">Авито → поиск: "авитолог", "продвижение на авито", "настройка авито для бизнеса". Яндекс: "авитолог Казань цена". Выбери 10 разных — не агентства, частники.</div>
+        </div>
+      </div>
+      <div class="step" style="margin-bottom:16px">
+        <div class="snum">2</div>
+        <div class="sbody">
+          <div class="stitle">Напиши каждому как клиент</div>
+          <div class="sdesc">Используй шаблон ниже. Не звони — только переписка. Все ответы копируй в таблицу.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="snum">3</div>
+        <div class="sbody">
+          <div class="stitle">Таблица: что фиксировать</div>
+          <div class="sdesc">Имя / Цена / Что входит / Срок / Гарантии / Как продаёт (давит / мягко) / Оценка 1–5 / Ссылка</div>
+        </div>
+      </div>
+      <div class="div"></div>
+      <h3>Шаблон сообщения — менять формулировки для каждого!</h3>
+      <div class="tmpl">Здравствуйте!
+
+Занимаюсь [ремонтом / клинингом / грузоперевозками] в Казани.
+Есть аккаунт на Авито, но заявок почти нет — хочу разобраться.
+
+Подскажите:
+— что конкретно входит в вашу услугу?
+— сколько стоит?
+— за какой срок будет результат?
+
+Рассматриваю нескольких специалистов.</div>
+      <div style="font-size:12px;color:var(--o);margin-top:8px;padding:8px 12px;background:var(--ol);border-radius:8px">⚠️ Каждое сообщение немного переформулируй — Авито блокирует одинаковые тексты. Не соглашайся на звонок.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <button class="ctrig" onclick="ct(this)">
+      <h2 style="margin:0;font-size:17px">Часть 2 — Бизнесы с плохим Авито</h2>
+      <span class="carr">▾</span>
+    </button>
+    <div class="cbody">
+      <div style="font-size:13px;color:var(--ink3);margin:10px 0">Это наши потенциальные клиенты — у них Авито есть, но не работает. Саша их находит и с 23 июня начинает писать.</div>
+      <div class="step" style="margin-bottom:16px">
+        <div class="snum">1</div>
+        <div class="sbody">
+          <div class="stitle">Авито → Казань → Услуги</div>
+          <div class="sdesc">Ищи: "ремонт квартир", "клининг", "грузоперевозки", "натяжные потолки", "электрик". Просматривай первые 50–60 объявлений в каждой нише.</div>
+        </div>
+      </div>
+      <div class="step" style="margin-bottom:16px">
+        <div class="snum">2</div>
+        <div class="sbody">
+          <div class="stitle">Критерии плохого профиля</div>
+          <div class="sdesc">— Нет фото или 1–2 некачественных<br>— Текст 2–3 строки, нет структуры<br>— Меньше 5 отзывов<br>— Нет описания компании<br>— Не обновлялись месяц и больше</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="snum">3</div>
+        <div class="sbody">
+          <div class="stitle">Таблица: 15 бизнесов</div>
+          <div class="sdesc">Название / Ниша / Что плохо (конкретно) / Ссылка на профиль / Есть ли телефон</div>
+        </div>
+      </div>
+      <div class="div"></div>
+      <h3>Шаблон сообщения бизнесу (с 23 июня)</h3>
+      <div class="tmpl">Здравствуйте!
+
+Увидел ваш профиль на Авито — занимаюсь продвижением бизнеса на этой площадке.
+
+Заметил, что [нет фото / короткое описание / мало отзывов] — это обычно снижает количество звонков.
+
+Если интересно, могу показать что именно мешает и что можно улучшить. Без обязательств.
+
+Алина, [номер телефона]</div>
+      <div style="font-size:12px;color:var(--o);margin-top:8px;padding:8px 12px;background:var(--ol);border-radius:8px">⚠️ 5–7 сообщений в день максимум. Каждое — немного разное. Все ответы сразу мне — переговоры не ведёшь.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px">Ожидаемые цифры (неделя 2)</h3>
+    <table class="tbl">
+      <thead><tr><th>Метрика</th><th>Цифра</th></tr></thead>
+      <tbody>
+        <tr><td>Сообщений в день</td><td><span class="badge bg">5–7</span></td></tr>
+        <tr><td>Сообщений за неделю</td><td><span class="badge bg">~35–40</span></td></tr>
+        <tr><td>Ответят (~15%)</td><td><span class="badge bo">5–7 человек</span></td></tr>
+        <tr><td>Тёплых разговоров</td><td><span class="badge bo">2–3</span></td></tr>
+        <tr><td>Закроется в клиента</td><td><span class="badge bg">1–2</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ РОЛИ ══ -->
+<div class="sc" id="roles">
+  <div class="hero">
+    <div class="eyebrow">Распределение</div>
+    <h1>Кто за что отвечает</h1>
+  </div>
+
+  <div class="roles" style="margin-bottom:10px">
+    <div class="rc ra">
+      <div class="rname rna">Я</div>
+      <ul class="rl">
+        <li>Профиль и объявления</li>
+        <li>УТП и упаковка услуги</li>
+        <li>Продажи и переговоры</li>
+        <li>Выполнение заказов</li>
+        <li>Аналитика результатов</li>
+        <li>Все решения по цене</li>
+      </ul>
+    </div>
+    <div class="rc rs">
+      <div class="rname rns">Саша</div>
+      <ul class="rl">
+        <li>Разведка конкурентов</li>
+        <li>Поиск потенциальных клиентов</li>
+        <li>Первые сообщения по шаблону</li>
+        <li>Мониторинг рынка</li>
+        <li>Ведение клиентов (абонемент)</li>
+        <li>Таблицы и структура</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card card-o" style="margin-bottom:10px">
+    <h3 style="margin-bottom:6px">Главное правило</h3>
+    <div style="font-size:14px;color:var(--ink2);line-height:1.65">Саша не ведёт переговоры. Нашёл интерес — передаёт мне. Я закрываю. Так не потеряем клиентов из-за некомпетентности в переговорах.</div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <h3 style="margin-bottom:12px">Деньги — сейчас и потом</h3>
+    <table class="tbl">
+      <thead><tr><th>Период</th><th>Схема</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Июнь–июль</b><br><span style="font-size:12px;color:var(--ink3)">Старт, всё вместе</span></td>
+          <td><span class="badge bg">50 / 50</span><br><span style="font-size:12px;color:var(--ink3)">Просто, без споров</span></td>
+        </tr>
+        <tr>
+          <td><b>С августа</b><br><span style="font-size:12px;color:var(--ink3)">Когда пойдут клиенты</span></td>
+          <td style="font-size:13px;color:var(--ink2)">Я беру за <b>настройку</b> (разово, 15–20к)<br>Саша берёт за <b>ведение</b> (абонемент, 8–12к/мес)<br>Деньги идут каждому отдельно</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px">Загрузка</h3>
+    <table class="tbl">
+      <thead><tr><th>Кто</th><th>Часов/нед</th><th>Когда</th></tr></thead>
+      <tbody>
+        <tr><td><b>Я</b></td><td><span class="badge bg">5–8 ч</span></td><td style="font-size:13px;color:var(--ink3)">Вечера + выходные</td></tr>
+        <tr><td><b>Саша</b></td><td><span class="badge bo">3–5 ч</span></td><td style="font-size:13px;color:var(--ink3)">Гибко</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ ДЕНЬГИ ══ -->
+<div class="sc" id="finance">
+  <div class="hero">
+    <div class="eyebrow">Финансовая модель</div>
+    <h1>40 000 ₽ за 4 недели</h1>
+  </div>
+
+  <div class="g3" style="margin-bottom:10px">
+    <div class="card"><div class="sn">40к</div><div class="sl">цель чистыми на двоих</div></div>
+    <div class="card"><div class="sn">4 нед</div><div class="sl">срок</div></div>
+    <div class="card"><div class="sn">0 ₽</div><div class="sl">вложений</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <h3 style="margin-bottom:14px">Как набираем 40к</h3>
+    <table class="tbl">
+      <thead><tr><th>Услуга</th><th>Цена</th><th>Кому</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>Упаковка под ключ</b><br><span style="font-size:12px;color:var(--ink3)">Профиль + объявления + стратегия</span></td>
+          <td>15–20к</td>
+          <td style="font-size:13px;color:var(--g)">Я делаю</td>
+        </tr>
+        <tr>
+          <td><b>Ведение (абонемент)</b><br><span style="font-size:12px;color:var(--ink3)">Мониторинг, обновления, стабильность</span></td>
+          <td>8–12к/мес</td>
+          <td style="font-size:13px;color:var(--o)">Саша ведёт</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card card-g" style="margin-bottom:10px">
+    <h3 style="margin-bottom:10px">Расчёт на месяц</h3>
+    <table class="tbl">
+      <thead><tr><th></th><th>Я</th><th>Саша</th></tr></thead>
+      <tbody>
+        <tr><td style="color:var(--ink3)">Источник</td><td style="font-size:13px">Упаковки × 2</td><td style="font-size:13px">Ведение × 2–3</td></tr>
+        <tr><td style="color:var(--ink3)">Сумма</td><td><span class="badge bg">30–40к</span></td><td><span class="badge bg">16–24к/мес</span></td></tr>
+        <tr><td style="color:var(--ink3)">В период старта (50/50)</td><td colspan="2"><span class="badge bg">20к каждому при 40к общих</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px">Сроки</h3>
+    <div class="tl">
+      <div class="tl-item">
+        <div class="tl-dot now"></div>
+        <div class="tl-label">15–22 июня</div>
+        <div class="tl-title">Запуск профиля</div>
+        <div class="tl-sub">2 объявления на Авито</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-label">23–29 июня</div>
+        <div class="tl-title">Первые касания</div>
+        <div class="tl-sub">4 объявления + ~35 сообщений Саши</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-label">30 июня — 6 июля</div>
+        <div class="tl-title">Первый платящий клиент</div>
+        <div class="tl-sub">Закрыть упаковку → получить деньги</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-label">7–13 июля</div>
+        <div class="tl-title">Цель: 40 000 ₽</div>
+        <div class="tl-sub">2 упаковки + 2 ведения</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ СОЗВОН ══ -->
+<div class="sc" id="call">
+  <div class="hero">
+    <div class="eyebrow">15 июня</div>
+    <h1>Повестка созвона</h1>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <div class="eyebrow" style="margin-bottom:14px">Структура — 30 минут</div>
+    <div class="step" style="margin-bottom:12px">
+      <div class="snum">1</div>
+      <div class="sbody">
+        <div class="stitle">Почему авитолог (7 мин)</div>
+        <div class="sdesc">Вкладка "Почему". Не ремонт делаем — помогаем бизнесам получать клиентов через Авито.</div>
+      </div>
+    </div>
+    <div class="step" style="margin-bottom:12px">
+      <div class="snum">2</div>
+      <div class="sbody">
+        <div class="stitle">Цифры и цель (5 мин)</div>
+        <div class="sdesc">Вкладка "Деньги". 40к за 4 недели — реально при 2 клиентах на упаковку.</div>
+      </div>
+    </div>
+    <div class="step" style="margin-bottom:12px">
+      <div class="snum">3</div>
+      <div class="sbody">
+        <div class="stitle">Кто что делает (5 мин)</div>
+        <div class="sdesc">Вкладка "Роли". 50/50 сейчас. Потом — Алина настройка, Саша ведение — деньги отдельно.</div>
+      </div>
+    </div>
+    <div class="step" style="margin-bottom:12px">
+      <div class="snum">4</div>
+      <div class="sbody">
+        <div class="stitle">Задача Саши на неделю (7 мин)</div>
+        <div class="sdesc">Вкладка "Разведка". Объяснить обе части. Саша уходит с конкретным заданием и дедлайном 19 июня.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="snum">5</div>
+      <div class="sbody">
+        <div class="stitle">Решение (5 мин)</div>
+        <div class="sdesc">Берёмся или нет. Следующий созвон — 22 июня (вс).</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:10px">
+    <div class="eyebrow" style="margin-bottom:12px">Вопросы которые нужно закрыть</div>
+    <ul class="cl">
+      <li><div class="cb" onclick="tog(this)"></div><div class="ct">Берёмся — да или нет?</div></li>
+      <li><div class="cb" onclick="tog(this)"></div><div class="ct">Саша: сколько часов в неделю реально?</div></li>
+      <li><div class="cb" onclick="tog(this)"></div><div class="ct">Саша понял задачу по разведке — может объяснить своими словами?</div></li>
+      <li><div class="cb" onclick="tog(this)"></div><div class="ct">Саша: есть доступ к Авито и Google Таблицам?</div></li>
+      <li><div class="cb" onclick="tog(this)"></div><div class="ct">Если в августе нет денег — признаём и меняем. Договорились?</div></li>
+    </ul>
+  </div>
+
+  <div class="card card-g">
+    <h3 style="margin-bottom:6px">Выход из созвона</h3>
+    <div style="font-size:14px;color:var(--ink2);line-height:1.65">Саша уходит с задачей. Дедлайн — <b>19 июня (пятница)</b>.<br>Следующий созвон — <b>22 июня (понедельник)</b>.</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function go(id){
+  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  event.currentTarget.classList.add('on');
+  upd();
+}
+function sw(id){
+  document.querySelectorAll('.wt').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.wc').forEach(c=>c.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  event.currentTarget.classList.add('on');
+}
+function tog(box){
+  box.classList.toggle('done');
+  const t=box.nextElementSibling;
+  if(t){const d=t.querySelector('div:first-child')||t;d.classList.toggle('ctd');}
+  upd();
+}
+function ct(trig){
+  const arr=trig.querySelector('.carr');
+  const body=trig.nextElementSibling;
+  arr.classList.toggle('open');
+  body.classList.toggle('open');
+}
+function upd(){
+  const all=document.querySelectorAll('#plan .cb');
+  const done=document.querySelectorAll('#plan .cb.done');
+  const t=all.length,d=done.length;
+  document.getElementById('ptxt').textContent=d+' / '+t;
+  document.getElementById('pfill').style.width=(t?Math.round(d/t*100):0)+'%';
+}
+upd();
+</script>
+</body>
+</html>
