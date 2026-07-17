@@ -189,6 +189,16 @@ textarea.f-in{min-height:80px;resize:vertical}
 .sbody b{color:var(--ink)}
 .small{font-size:13px;color:var(--ink3);line-height:1.5}
 .due-banner{background:#FFF3E5;border:1px solid #F8D9B4;color:#8A4B00;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:600;margin-bottom:10px}
+.save-tile{border-radius:12px;padding:13px 15px;font-size:15px;font-weight:700;margin:2px 0 10px}
+.save-tile.ok{background:#E6F4E6;color:#1B5E20}
+.save-tile.bad{background:#FDECEA;color:#B71C1C}
+.save-tile.even{background:var(--pill);color:var(--ink2)}
+.due-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.due-row:last-child{border-bottom:none}
+.due-mid{flex:1;min-width:0}
+.due-name{font-size:16px;font-weight:700}
+.due-sub{font-size:13px;color:var(--ink2)}
+.due-btn{background:var(--green);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0}
 .catman-row{display:flex;align-items:center;gap:12px;padding:9px 2px;cursor:pointer}
 .catman-row .cic{width:36px;height:36px;font-size:17px}
 .catman-row .nm{flex:1;font-size:16px}
@@ -252,7 +262,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 5</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 6</div></div>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
   <div class="dr-sep"></div>
@@ -349,11 +359,14 @@ textarea.f-in{min-height:80px;resize:vertical}
   <div class="seg" id="rTypeSeg" style="margin-top:12px">
     <button data-t="expense" class="on">Расход</button>
     <button data-t="income">Доход</button>
+    <button data-t="transfer">Отложить</button>
   </div>
   <div class="f-label">Сумма — нажмите, чтобы ввести</div>
   <input class="f-amt" id="rAmt" placeholder="0,00" autocomplete="off" readonly>
-  <div class="f-label">Категория</div>
-  <select class="f-sel" id="rCatSel"></select>
+  <div id="rCatWrap"><div class="f-label">Категория</div>
+  <select class="f-sel" id="rCatSel"></select></div>
+  <div id="rToWrap" style="display:none"><div class="f-label">Отложить на счёт</div>
+  <select class="f-sel" id="rToAcc"></select></div>
   <div class="row2">
     <div><div class="f-label">Ближайшая дата</div><input type="date" class="f-in" id="rDue"></div>
     <div><div class="f-label">Время напоминания</div><input type="time" class="f-in" id="rTime" value="09:00"></div>
@@ -442,6 +455,14 @@ textarea.f-in{min-height:80px;resize:vertical}
   </div>
 </div></div>
 
+<!-- SHEET: ПОРА ОПЛАТИТЬ -->
+<div class="sheet" id="dueSheet"><div class="sheet-inner">
+  <div class="sheet-grip"></div>
+  <h2>🔔 Пора оплатить</h2>
+  <div id="dueList"></div>
+  <button class="btn btn-line" id="dueClose" style="margin-top:12px">Позже</button>
+</div></div>
+
 <!-- SHEET: РАЗОБРАТЬ СМС -->
 <div class="sheet" id="smsSheet"><div class="sheet-inner">
   <div class="sheet-grip"></div>
@@ -472,7 +493,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 <script>
 'use strict';
 /* ================= SEED ================= */
-const GROUPS=['Прочие','Нужное','Основное'];
+const GROUPS=['Основное','Нужное','Прочие'];
 const SEED_CATS=[
   {id:'prochie',name:'Прочие',icon:'🚗',type:'expense',group:'Прочие'},
   {id:'dosug',name:'Досуг',icon:'⭐',type:'expense',group:'Прочие'},
@@ -529,6 +550,20 @@ if(!db.accV3){
   if(!db.accounts.some(a=>/кредит/i.test(a.name)))db.accounts.push({id:'a2',name:'Кредитная карта',icon:'💳',start:-13000,tail:'',limit:80000});
   if(!db.accounts.some(a=>/сберегат/i.test(a.name)))db.accounts.push({id:'a3',name:'Сберегательный счёт',icon:'🐷',start:0,tail:''});
   db.accV3=true;
+  try{save();}catch(e){}
+}
+if(!db.savRemV6){
+  const sav=db.accounts.find(a=>/сберегат|сбережен/i.test(a.name));
+  const main=db.accounts[0];
+  if(sav&&main&&!db.rems.some(r=>r.type==='transfer')){
+    const now=new Date();
+    let d5=new Date(now.getFullYear(),now.getMonth(),5);
+    if(d5.getTime()<=now.getTime())d5.setMonth(d5.getMonth()+1);
+    db.rems.push({id:'rsav1',name:'Отложить на сберегательный',amount:1000,type:'transfer',catId:null,
+      accId:main.id,toAccId:sav.id,due:d5.getFullYear()+'-'+String(d5.getMonth()+1).padStart(2,'0')+'-05',
+      time:'09:00',repeat:'monthly',end:'',note:'Поменяйте сумму под себя',dayBefore:true});
+  }
+  db.savRemV6=true;
   try{save();}catch(e){}
 }
 function save(){localStorage.setItem(LS_KEY,JSON.stringify(db));}
@@ -677,7 +712,7 @@ function renderRems(){
   let html='';
   for(const [k,list] of groups){
     const d=keyToDate(k);
-    const daySum=list.reduce((s,r)=>s+(r.type==='expense'?-r.amount:r.amount),0);
+    const daySum=list.reduce((s,r)=>s+(r.type==='expense'?-r.amount:r.type==='income'?r.amount:0),0);
     html+='<div class="dh"><span class="dow">'+DOW[d.getDay()]+'</span><span class="dd">'+dateLine(k)+'</span><span class="ds">'+fmtN.format(daySum)+' ₽</span></div>';
     const diff=remDiff(list[0]);
     let badge='';
@@ -687,13 +722,15 @@ function renderRems(){
     html+='<div class="badge-row">'+badge+'</div>';
     for(const r of list){
       const c=catOf(r.catId);
-      const icCls=r.type==='expense'?'exp':'inc';
-      const aCls=r.type==='expense'?'a-exp':'a-inc';
+      const isTr=r.type==='transfer';
+      const icCls=isTr?'tr':(r.type==='expense'?'exp':'inc');
+      const aCls=isTr?'a-tr':(r.type==='expense'?'a-exp':'a-inc');
       const sign=r.type==='expense'?'-':'';
+      const sub=isTr?'Отложить на '+esc(accOf(r.toAccId)?.name||'счёт'):esc(c?c.name:'Без категории');
       html+='<div class="row" data-id="'+r.id+'">'
-        +'<div class="cic '+icCls+'">'+(c?c.icon:'📦')+'</div>'
+        +'<div class="cic '+icCls+'">'+(isTr?'🐷':(c?c.icon:'📦'))+'</div>'
         +'<div class="rmid"><div class="rname">'+esc(r.name)+(r.repeat!=='none'?' <span class="rep">⟳</span>':'')+'</div>'
-        +'<div class="rsub">'+esc(c?c.name:'Без категории')+'</div>'
+        +'<div class="rsub">'+sub+'</div>'
         +(r.note?'<div class="rnote">'+esc(r.note)+'</div>':'')
         +'</div>'
         +'<div class="rright"><div class="ramt '+aCls+'">'+sign+fmt(r.amount)+' <span style="font-weight:400">⏰</span></div>'
@@ -724,24 +761,28 @@ function renderSum(){
     if(t.type==='transfer')continue;
     sums[t.catId||'_none']=(sums[t.catId||'_none']||0)+t.amount;
   }
+  const incCats=db.cats.filter(c=>c.type==='income');
+  const expCats=db.cats.filter(c=>c.type==='expense');
+  const incTotal=incCats.reduce((s,c)=>s+(sums[c.id]||0),0);
+  const expTotal=expCats.reduce((s,c)=>s+(sums[c.id]||0),0)+(sums['_none']||0);
+  const diff=incTotal-expTotal;
   let html='';
-  for(const kind of ['expense','income']){
-    const cats=db.cats.filter(c=>c.type===kind);
-    const total=cats.reduce((s,c)=>s+(sums[c.id]||0),0)+(kind==='expense'?(sums['_none']||0):0);
-    html+='<div class="sum-head"><span class="t'+(kind==='expense'?' exp':'')+'" style="color:'+(kind==='expense'?'var(--blue)':'var(--green)')+'">'+(kind==='expense'?'РАСХОД':'ДОХОД')+'</span><span class="v">'+fmt(total)+'</span></div>';
-    if(kind==='expense'){
-      for(const g of GROUPS){
-        const gc=cats.filter(c=>c.group===g);
-        if(!gc.length)continue;
-        const gt=gc.reduce((s,c)=>s+(sums[c.id]||0),0);
-        html+='<div class="grp"><span>'+esc(g)+'</span><span>'+fmt(gt)+'</span></div>';
-        for(const c of gc)html+=catRow(c,sums[c.id]||0,'exp');
-      }
-      if(sums['_none'])html+=catRow({icon:'📦',name:'Без категории'},sums['_none'],'exp');
-    }else{
-      for(const c of cats)html+=catRow(c,sums[c.id]||0,'inc');
-    }
+  if(incTotal||expTotal){
+    if(diff>0)html+='<div class="save-tile ok">✓ В этом месяце удалось отложить: '+fmt(diff)+'</div>';
+    else if(diff<0)html+='<div class="save-tile bad">⚠ Расходы превысили доходы на '+fmt(-diff)+'</div>';
+    else html+='<div class="save-tile even">Доходы равны расходам</div>';
   }
+  html+='<div class="sum-head"><span class="t" style="color:var(--green)">ДОХОД</span><span class="v">'+fmt(incTotal)+'</span></div>';
+  for(const c of incCats)html+=catRow(c,sums[c.id]||0,'inc');
+  html+='<div class="sum-head"><span class="t exp" style="color:var(--blue)">РАСХОД</span><span class="v">'+fmt(expTotal)+'</span></div>';
+  for(const g of GROUPS){
+    const gc=expCats.filter(c=>c.group===g);
+    if(!gc.length)continue;
+    const gt=gc.reduce((s,c)=>s+(sums[c.id]||0),0);
+    html+='<div class="grp"><span>'+esc(g)+'</span><span>'+fmt(gt)+'</span></div>';
+    for(const c of gc)html+=catRow(c,sums[c.id]||0,'exp');
+  }
+  if(sums['_none'])html+=catRow({icon:'📦',name:'Без категории'},sums['_none'],'exp');
   $('#sumBody').innerHTML=html;
 }
 function catRow(c,v,cls){
@@ -916,7 +957,7 @@ $('#fDateBtn').addEventListener('click',()=>calOpen(fDateKey,k=>{fDateKey=k;updD
 $('#fsBack').addEventListener('click',closeSheets);
 function fillAccSelects(){
   const opts=db.accounts.map(a=>'<option value="'+a.id+'">'+a.icon+' '+esc(a.name)+'</option>').join('');
-  $('#fAcc').innerHTML=opts;$('#fAccTo').innerHTML=opts;$('#rAcc').innerHTML=opts;
+  $('#fAcc').innerHTML=opts;$('#fAccTo').innerHTML=opts;$('#rAcc').innerHTML=opts;$('#rToAcc').innerHTML=opts;
 }
 function openTxSheet(tx,smsData){
   editTx=tx||null;
@@ -978,6 +1019,9 @@ let editRem=null,remType='expense',remCat=null;
 $('#rAmt').addEventListener('click',()=>calcOpen($('#rAmt').value,v=>{$('#rAmt').value=v;}));
 $('#rCatSel').addEventListener('change',()=>{remCat=$('#rCatSel').value||null;});
 function renderRemChips(){
+  $('#rCatWrap').style.display=remType==='transfer'?'none':'';
+  $('#rToWrap').style.display=remType==='transfer'?'':'none';
+  if(remType==='transfer')return;
   if(remCat&&!db.cats.some(c=>c.id===remCat&&c.type===remType))remCat=null;
   fillCatSelect($('#rCatSel'),remType,remCat);
 }
@@ -996,6 +1040,7 @@ function openRemSheet(r){
   remType=r?r.type:'expense';
   $('#rTypeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.t===remType));
   remCat=r?r.catId:null;
+  if(r&&r.toAccId)setTimeout(()=>{$('#rToAcc').value=r.toAccId;},0);
   $('#rName').value=r?r.name:'';
   $('#rAmt').value=r?String(r.amount).replace('.',','):'';
   $('#rDue').value=r?r.due:dayKey(Date.now());
@@ -1015,12 +1060,14 @@ function readRemForm(){
   if(!name){$('#rName').focus();return null;}
   const amount=parseFloat(String($('#rAmt').value).replace(/\s/g,'').replace(',','.'));
   if(!amount||amount<=0){$('#rAmt').focus();return null;}
-  if(!remCat){alert('Выберите категорию');return null;}
+  if(remType!=='transfer'&&!remCat){alert('Выберите категорию');return null;}
+  if(remType==='transfer'&&$('#rToAcc').value===$('#rAcc').value){alert('Выберите разные счета');return null;}
   if(!$('#rDue').value){alert('Укажите дату');return null;}
   return {
     id:editRem?editRem.id:uid(),
-    name,amount,type:remType,catId:remCat,
+    name,amount,type:remType,catId:remType==='transfer'?null:remCat,
     accId:$('#rAcc').value,
+    toAccId:remType==='transfer'?$('#rToAcc').value:null,
     due:$('#rDue').value,time:$('#rTime').value||'09:00',
     repeat:$('#rRepeat').value,end:$('#rEnd').value||'',
     note:$('#rNote').value.trim(),
@@ -1048,19 +1095,50 @@ function nextDue(r){
   if(r.end&&k>r.end)return null;
   return k;
 }
-$('#rPaid').addEventListener('click',()=>{
-  const rec=readRemForm();if(!rec)return;
+function payReminder(rec){
   db.txs.push({
-    id:uid(),ts:Date.now(),type:rec.type,amount:rec.amount,
-    catId:rec.catId,accId:rec.accId,toAccId:null,
-    merchant:rec.name,note:rec.note
+    id:uid(),ts:Date.now(),type:rec.type==='transfer'?'transfer':rec.type,amount:rec.amount,
+    catId:rec.type==='transfer'?null:rec.catId,accId:rec.accId,
+    toAccId:rec.type==='transfer'?rec.toAccId:null,
+    merchant:rec.name,note:rec.note||''
   });
   const nd=nextDue(rec);
   if(nd){rec.due=nd;const i=db.rems.findIndex(x=>x.id===rec.id);if(i>=0)db.rems[i]=rec;else db.rems.push(rec);}
   else db.rems=db.rems.filter(x=>x.id!==rec.id);
-  save();closeSheets();rerender();
+  save();rerender();
+  return nd;
+}
+$('#rPaid').addEventListener('click',()=>{
+  const rec=readRemForm();if(!rec)return;
+  const nd=payReminder(rec);
+  closeSheets();
   alert('Записала операцию «'+rec.name+'»'+(nd?'. Следующее напоминание: '+dateLine(nd):''));
 });
+
+/* ================= ОКОШКО «ПОРА ОПЛАТИТЬ» ================= */
+function renderDueList(focusId){
+  const due=db.rems.filter(r=>remDiff(r)<=0||r.id===focusId).sort((a,b)=>a.due<b.due?-1:1);
+  if(!due.length){$('#dueList').innerHTML='<p class="small" style="padding:8px 0">Все платежи отмечены 🎉</p>';return;}
+  $('#dueList').innerHTML=due.map(r=>{
+    const c=catOf(r.catId);
+    const isTr=r.type==='transfer';
+    return '<div class="due-row"><div class="cic '+(isTr?'tr':r.type==='expense'?'exp':'inc')+'" style="width:38px;height:38px;font-size:17px">'+(isTr?'🐷':(c?c.icon:'📦'))+'</div>'
+      +'<div class="due-mid"><div class="due-name">'+esc(r.name)+'</div><div class="due-sub">'+dateLine(r.due)+' · '+fmt(r.amount)+'</div></div>'
+      +'<button class="due-btn" data-id="'+r.id+'">✓ Оплачено</button></div>';
+  }).join('');
+  $('#dueList').querySelectorAll('.due-btn').forEach(b=>b.addEventListener('click',()=>{
+    const r=db.rems.find(x=>x.id===b.dataset.id);
+    if(r)payReminder({...r});
+    renderDueList();
+  }));
+}
+function openDueSheet(focusId){
+  if(!db.rems.some(r=>remDiff(r)<=0||r.id===focusId))return false;
+  renderDueList(focusId);
+  openSheet('#dueSheet');
+  return true;
+}
+$('#dueClose').addEventListener('click',closeSheets);
 $('#rIcs').addEventListener('click',()=>{
   const rec=readRemForm();if(!rec)return;
   const dt=rec.due.replace(/-/g,'')+'T'+rec.time.replace(':','')+'00';
@@ -1076,7 +1154,8 @@ $('#rIcs').addEventListener('click',()=>{
     'DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z',
     'DTSTART:'+dt,
     'SUMMARY:Оплатить: '+rec.name+' ('+fmtN.format(rec.amount)+' руб.)',
-    rec.note?'DESCRIPTION:'+rec.note.replace(/\n/g,'\\n'):'',
+    'DESCRIPTION:'+(rec.note?rec.note.replace(/\n/g,'\\n')+'\\n':'')+'Отметить оплату: '+hookBase+'?pay='+rec.id,
+    'URL:'+hookBase+'?pay='+rec.id,
     rr,
     'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:Оплатить: '+rec.name,'TRIGGER:-PT0M','END:VALARM',
     rec.dayBefore?'BEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Завтра оплатить: '+rec.name+'\r\nTRIGGER:-P1D\r\nEND:VALARM':'',
@@ -1267,9 +1346,21 @@ rerender();
 (function(){
   const q=new URLSearchParams(location.search);
   const sms=q.get('sms')||q.get('text');
+  const pay=q.get('pay');
   if(sms){
     history.replaceState({},'',location.pathname);
     handleSmsText(sms,{fromUrl:true});
+    return;
+  }
+  if(pay){
+    history.replaceState({},'',location.pathname);
+    openDueSheet(pay);
+    return;
+  }
+  const today=dayKey(Date.now());
+  if(db.rems.some(r=>remDiff(r)<=0)&&localStorage.getItem('bcDuePrompt')!==today){
+    localStorage.setItem('bcDuePrompt',today);
+    openDueSheet();
   }
 })();
 </script>
