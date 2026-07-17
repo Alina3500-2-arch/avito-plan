@@ -252,7 +252,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 4</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 5</div></div>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
   <div class="dr-sep"></div>
@@ -783,7 +783,7 @@ document.querySelectorAll('.dr-item').forEach(b=>b.addEventListener('click',()=>
   else if(act==='setup'){openSheet('#setupSheet');}
   else if(act==='csv'){closeSheets();exportCsv();}
   else if(act==='backup'){closeSheets();download('money-backup-'+dayKey(Date.now())+'.json',JSON.stringify(db,null,1),'application/json');}
-  else if(act==='restore'){$('#impFile').click();}
+  else if(act==='restore'){closeSheets();$('#impFile').click();}
 }));
 
 /* ================= КАЛЬКУЛЯТОР (ОКОШКО) ================= */
