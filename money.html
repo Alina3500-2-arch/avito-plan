@@ -340,7 +340,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 9</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 10</div></div>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
   <div class="dr-sep"></div>
@@ -678,7 +678,18 @@ if(!db.savRemV6){
   db.savRemV6=true;
   try{save();}catch(e){}
 }
-function save(){localStorage.setItem(LS_KEY,JSON.stringify(db));}
+const IN_APP=/MoiDengiApp/.test(navigator.userAgent);
+function syncNativeReminders(){
+  try{
+    if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.reminders){
+      window.webkit.messageHandlers.reminders.postMessage((db.rems||[]).map(r=>({
+        id:r.id,name:r.name,amount:r.amount,due:r.due,time:r.time||'09:00',
+        repeat:r.repeat||'none',dayBefore:r.dayBefore!==false
+      })));
+    }
+  }catch(e){}
+}
+function save(){localStorage.setItem(LS_KEY,JSON.stringify(db));syncNativeReminders();}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 /* ================= HELPERS ================= */
@@ -1665,10 +1676,11 @@ function exportCsv(){
   download('money-'+dayKey(Date.now())+'.csv','﻿'+head+rows,'text/csv;charset=utf-8');
 }
 const hookBase=location.origin.startsWith('http')?location.origin+location.pathname:location.href.split('?')[0];
-$('#hookUrl').textContent=hookBase+'?sms=[Здесь переменная «URL-кодированный текст»]';
+const smsHook=IN_APP?'moidengi://sms?text=':(hookBase+'?sms=');
+$('#hookUrl').textContent=smsHook+'[Здесь переменная «URL-кодированный текст»]';
 $('#copyUrl').addEventListener('click',async()=>{
-  try{await navigator.clipboard.writeText(hookBase+'?sms=');$('#copyUrl').textContent='Скопировано ✓';}
-  catch(e){prompt('Скопируйте адрес:',hookBase+'?sms=');}
+  try{await navigator.clipboard.writeText(smsHook);$('#copyUrl').textContent='Скопировано ✓';}
+  catch(e){prompt('Скопируйте адрес:',smsHook);}
 });
 $('#impFile').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;
@@ -1689,6 +1701,7 @@ $('#impFile').addEventListener('change',e=>{
 /* ================= INIT ================= */
 function rerender(){renderTxs();renderRems();if(curTab==='sum')renderSum();}
 rerender();
+syncNativeReminders();
 (function(){
   const q=new URLSearchParams(location.search);
   const sms=q.get('sms')||q.get('text');

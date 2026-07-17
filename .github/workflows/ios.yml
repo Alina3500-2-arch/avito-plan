@@ -1,0 +1,46 @@
+name: iOS app
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ios/**"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: cd ios && xcodegen
+
+      - name: Build (unsigned)
+        run: |
+          cd ios
+          xcodebuild -project MoiDengi.xcodeproj -scheme MoiDengi \
+            -configuration Release -sdk iphoneos -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" build
+
+      - name: Package ipa
+        run: |
+          cd ios
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/MoiDengi.app Payload/
+          zip -qry MoiDengi.ipa Payload
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ipa-latest
+          name: "Мои деньги — приложение для SideStore"
+          body: "Скачайте MoiDengi.ipa на iPhone и установите через SideStore."
+          files: ios/MoiDengi.ipa
