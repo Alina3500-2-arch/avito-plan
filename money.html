@@ -198,6 +198,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 /* SWIPE TO PAY */
 .swipe-wrap{position:relative;overflow:hidden;border-radius:12px}
 .swipe-pay{position:absolute;right:0;top:6px;bottom:6px;width:98px;background:var(--green);color:#fff;border:none;border-radius:12px;font-size:13.5px;font-weight:800;cursor:pointer}
+.swipe-del{background:var(--red)}
 .swipe-wrap .row{position:relative;background:#fff;touch-action:pan-y}
 .fab-mini{position:absolute;right:24px;bottom:calc(126px + env(safe-area-inset-bottom));width:46px;height:46px;border-radius:50%;background:#fff;border:2px solid var(--green);font-size:20px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.2);z-index:2}
 .due-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
@@ -339,7 +340,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 8</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 9</div></div>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
   <div class="dr-sep"></div>
@@ -784,7 +785,8 @@ function renderTxs(){
         :esc(t.merchant||c?.name||'Без категории');
       const aCls=t.type==='expense'?'a-exp':t.type==='income'?'a-inc':'a-tr';
       const sign=t.type==='expense'?'-':t.type==='income'?'':'';
-      html+='<div class="row" data-id="'+t.id+'">'
+      html+='<div class="swipe-wrap" data-id="'+t.id+'"><button class="swipe-pay swipe-del">Удалить</button>'
+        +'<div class="row" data-id="'+t.id+'">'
         +'<div class="cic '+icCls+'">'+icon+'</div>'
         +'<div class="rmid"><div class="rname">'+name+'</div>'
         +'<div class="rsub">'+esc(t.type==='transfer'?'Перевод':(c?c.name:'Без категории'))+'</div>'
@@ -792,24 +794,49 @@ function renderTxs(){
         +'</div>'
         +'<div class="rright"><div class="ramt '+aCls+'">'+sign+fmt(t.amount)+'</div>'
         +'<div class="rbal">'+esc(accOf(t.accId)?.name||'')+' | '+fmt(run[t.id]??0)+'</div></div>'
-        +'</div>';
+        +'</div></div>';
     }
   }
   box.innerHTML=html;
   selReset();
-  box.querySelectorAll('.row').forEach(el=>{
+  box.querySelectorAll('.swipe-wrap').forEach(w=>{
+    const el=w.querySelector('.row');
+    const id=el.dataset.id;
+    let lp=null,sx=0,sy=0,dx=0,dy=0,drag=false;
+    el.addEventListener('pointerdown',e=>{
+      sx=e.clientX;sy=e.clientY;dx=0;dy=0;drag=true;el.style.transition='none';
+      lp=setTimeout(()=>{selMode=true;toggleSel(el);lpFired=true;},450);
+    });
+    el.addEventListener('pointermove',e=>{
+      if(!drag)return;
+      dx=e.clientX-sx;dy=e.clientY-sy;
+      if((Math.abs(dx)>8||Math.abs(dy)>8)&&lp){clearTimeout(lp);lp=null;}
+      if(dx<0&&!selMode)el.style.transform='translateX('+Math.max(dx,-112)+'px)';
+    });
+    const end=()=>{
+      if(lp){clearTimeout(lp);lp=null;}
+      if(!drag)return;
+      drag=false;
+      el.style.transition='transform .18s';
+      if(dx<-55&&!selMode){el.style.transform='translateX(-106px)';w.dataset.open='1';}
+      else{el.style.transform='translateX(0)';w.dataset.open='';}
+    };
+    el.addEventListener('pointerup',end);
+    el.addEventListener('pointercancel',end);
+    el.addEventListener('pointerleave',end);
+    el.addEventListener('contextmenu',e=>e.preventDefault());
     el.addEventListener('click',()=>{
       if(lpFired){lpFired=false;return;}
+      if(Math.abs(dx)>8){dx=0;return;}
+      if(w.dataset.open){el.style.transition='transform .18s';el.style.transform='translateX(0)';w.dataset.open='';return;}
       if(selMode){toggleSel(el);return;}
-      openTxSheet(db.txs.find(t=>t.id===el.dataset.id));
+      openTxSheet(db.txs.find(t=>t.id===id));
     });
-    let lp=null;
-    el.addEventListener('pointerdown',()=>{lp=setTimeout(()=>{selMode=true;toggleSel(el);lpFired=true;},450);});
-    const cancel=()=>{if(lp){clearTimeout(lp);lp=null;}};
-    el.addEventListener('pointerup',cancel);
-    el.addEventListener('pointermove',cancel);
-    el.addEventListener('pointerleave',cancel);
-    el.addEventListener('contextmenu',e=>e.preventDefault());
+    w.querySelector('.swipe-del').addEventListener('click',()=>{
+      if(!confirm('Удалить операцию?'))return;
+      db.txs=db.txs.filter(t=>t.id!==id);
+      save();rerender();
+    });
   });
 }
 
