@@ -83,7 +83,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .fab svg{width:28px;height:28px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round}
 
 /* DRAWER */
-.ovl{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:80;display:none}
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:80;display:none}
 .ovl.on{display:block}
 .drawer{position:fixed;top:0;bottom:0;left:0;width:82%;max-width:330px;background:#fff;z-index:95;transform:translateX(-103%);transition:transform .22s ease;overflow-y:auto;padding-top:calc(14px + env(safe-area-inset-top))}
 .drawer.on{transform:translateX(0)}
@@ -111,15 +111,66 @@ textarea.f-in{min-height:80px;resize:vertical}
 .seg{display:flex;background:var(--pill);border-radius:12px;padding:3px;margin-bottom:4px}
 .seg button{flex:1;border:none;background:none;border-radius:10px;padding:9px 4px;font-size:14px;font-weight:700;color:var(--ink3);cursor:pointer}
 .seg button.on{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-/* CALCULATOR */
-.calc{display:none;margin-top:8px}
-.calc.on{display:block}
-.calc-exp{text-align:right;font-size:14px;color:var(--ink3);min-height:19px;padding:1px 4px;font-variant-numeric:tabular-nums}
-.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.calc-grid button{border:none;border-radius:10px;padding:11px 0;font-size:20px;font-weight:600;background:var(--pill);color:var(--ink);cursor:pointer}
-.calc-grid button:active{background:#E0E0E5}
-.calc-grid .op{background:#E3F0FD;color:var(--blue-d);font-weight:700}
-.calc-grid .ok{background:var(--green);color:#fff;font-size:16px;font-weight:700}
+/* FULLSCREEN FORM */
+.fs{position:fixed;inset:0;z-index:85;background:#fff;display:none;flex-direction:column}
+.fs.on{display:flex}
+.fs-top{display:flex;align-items:center;gap:8px;padding:10px 10px 2px;padding-top:calc(10px + env(safe-area-inset-top))}
+.fs-top .bk{background:none;border:none;font-size:26px;color:var(--ink);cursor:pointer;padding:2px 10px;line-height:1}
+.fs-top .ttl{flex:1;font-size:16px;font-weight:700;color:var(--ink2)}
+.fs-top .trash{background:none;border:none;font-size:20px;cursor:pointer;padding:2px 10px}
+.fs-body{flex:1;overflow-y:auto;padding:2px 18px 100px}
+.fr{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #F2F2F5}
+.fr-ic{width:28px;flex-shrink:0;display:flex;justify-content:center}
+.fr-ic svg{width:24px;height:24px;stroke:#8E8E93;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.fr-name{flex:1;border:none;font-size:19px;color:var(--ink);padding:4px 0;background:none;outline:none}
+.fr-name::placeholder{color:#B9B9BF}
+.fr-col{flex:1;display:flex;flex-direction:column;min-width:0}
+.fr-cap{font-size:12.5px;color:#8E8E93}
+.fr-sel{border:none;background:none;font-size:18px;font-weight:600;color:var(--ink);padding:2px 0 0;-webkit-appearance:none;appearance:none;width:100%;font-family:inherit}
+.fr-date{flex:1;background:none;border:none;font-size:18px;font-weight:600;color:var(--ink);text-align:left;cursor:pointer;padding:0}
+.fr-time{border:none;background:none;font-size:17px;color:var(--ink);font-family:inherit}
+.fr-note{flex:1;border:none;background:none;font-size:17px;color:var(--ink);padding:2px 0;outline:none}
+.amt-row{display:flex;align-items:center;gap:12px;padding:14px 0 10px}
+.sign{width:54px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#fff;flex-shrink:0}
+.sign.exp{background:var(--red)}.sign.inc{background:var(--green)}.sign.tr{background:#8E8E93}
+.amt-val{flex:1;text-align:left;background:none;border:none;font-size:34px;font-weight:700;color:var(--ink);cursor:pointer;padding:0;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.calc-btn{width:48px;height:48px;border-radius:50%;background:var(--blue);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.calc-btn svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round}
+.rub{background:var(--blue);color:#fff;font-weight:800;font-size:15px;padding:12px 16px;border-radius:26px;flex-shrink:0}
+.fs-bottom{position:absolute;left:0;right:0;bottom:0;background:#F4F4F6;display:flex;gap:2px;padding:13px 14px calc(13px + env(safe-area-inset-bottom))}
+.fs-bottom button{background:none;border:none;font-size:16px;font-weight:800;letter-spacing:.02em;color:#8E8E93;cursor:pointer;padding:4px 9px}
+.fs-bottom button.on{color:var(--red)}
+.fs-bottom button.on[data-t="income"]{color:var(--green)}
+.fs-bottom button.on[data-t="transfer"]{color:var(--blue)}
+.fab-save{position:absolute;right:16px;bottom:calc(50px + env(safe-area-inset-bottom));width:62px;height:62px;border-radius:50%;background:var(--green);border:none;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 5px 14px rgba(0,0,0,.3);z-index:2}
+
+/* MODALS (calculator, calendar) */
+.modal-ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:120;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-ovl.on{display:flex}
+.calcm{width:100%;max-width:330px;border-radius:8px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.calcm-disp{background:#fff;padding:16px 16px 8px;text-align:right}
+.calcm-exp{font-size:14px;color:#8E8E93;min-height:18px;font-variant-numeric:tabular-nums}
+.calcm-val{font-size:42px;font-weight:700;color:#111;line-height:1.15;font-variant-numeric:tabular-nums;word-break:break-all}
+.calcm-grid{display:grid;grid-template-columns:repeat(4,1fr)}
+.calcm-grid button{background:#8C8C90;border:none;color:#fff;font-size:26px;padding:16px 0;cursor:pointer}
+.calcm-grid button:active{background:#77777B}
+.calcm-grid .opc{background:#828288}
+.calcm-grid .c{color:#FF5252;font-weight:800}
+.calcm-grid .okb{background:var(--green);font-size:23px;font-weight:700}
+.calm{width:100%;max-width:330px;border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.calm-head{background:#F4511E;color:#fff;padding:15px 20px}
+.calm-year{font-size:15px;opacity:.85}
+.calm-date{font-size:25px;font-weight:800;margin-top:2px}
+.calm-nav{display:flex;align-items:center;justify-content:space-between;padding:10px 8px 0}
+.calm-nav b{font-size:16px;font-weight:700;text-transform:capitalize}
+.calm-nav button{background:none;border:none;font-size:20px;color:#555;cursor:pointer;padding:4px 14px}
+.calm-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:6px 12px 2px;gap:2px}
+.calm-grid .wd{text-align:center;font-size:13px;color:#8E8E93;padding:6px 0}
+.calm-grid button{background:none;border:none;font-size:15.5px;color:var(--ink);padding:0;height:38px;border-radius:50%;cursor:pointer}
+.calm-grid button.sel{background:#F4511E;color:#fff;font-weight:700}
+.calm-grid button:disabled{visibility:hidden}
+.calm-foot{display:flex;justify-content:flex-end;gap:8px;padding:6px 12px 12px}
+.calm-foot button{background:none;border:none;color:#F4511E;font-size:15px;font-weight:800;letter-spacing:.05em;cursor:pointer;padding:8px 10px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .chkrow{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:15px}
 .chkrow input{width:20px;height:20px;accent-color:var(--blue)}
@@ -201,7 +252,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 3</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 4</div></div>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
   <div class="dr-sep"></div>
@@ -214,39 +265,80 @@ textarea.f-in{min-height:80px;resize:vertical}
   <input type="file" id="impFile" accept=".json" style="display:none">
 </nav>
 
-<!-- SHEET: ОПЕРАЦИЯ -->
-<div class="sheet" id="txSheet"><div class="sheet-inner">
-  <div class="sheet-grip"></div>
-  <h2 id="txSheetTitle">Новая операция</h2>
-  <div id="smsPreview"></div>
-  <div id="mmHint"></div>
-  <div class="seg" id="typeSeg">
-    <button data-t="expense" class="on">Расход</button>
-    <button data-t="income">Доход</button>
-    <button data-t="transfer">Перевод</button>
+<!-- ПОЛНОЭКРАННАЯ ФОРМА ОПЕРАЦИИ -->
+<div class="fs" id="txFs">
+  <div class="fs-top">
+    <button class="bk" id="fsBack" aria-label="Назад">←</button>
+    <div class="ttl" id="txSheetTitle">Новая операция</div>
+    <button class="trash" id="fDel" style="display:none" aria-label="Удалить">🗑️</button>
   </div>
-  <div class="f-label">Сумма — нажмите, чтобы ввести</div>
-  <input class="f-amt" id="fAmt" placeholder="0,00" autocomplete="off" readonly>
-  <div class="calc" id="fCalc"></div>
-  <div id="catWrap">
-    <div class="f-label">Категория</div>
-    <select class="f-sel" id="fCatSel"></select>
+  <div class="fs-body">
+    <div id="smsPreview"></div>
+    <div id="mmHint"></div>
+    <div class="fr">
+      <span class="fr-ic"><svg viewBox="0 0 24 24"><path d="M7 3h13v13"/><path d="M4 7h13v14H4z"/></svg></span>
+      <input class="fr-name" id="fMerchant" placeholder="Получатель или купленный товар" autocomplete="off">
+    </div>
+    <div class="amt-row">
+      <span class="sign exp" id="fSign">−</span>
+      <button type="button" class="amt-val" id="fAmtBtn">0,00</button>
+      <button type="button" class="calc-btn" id="fCalcBtn" aria-label="Калькулятор"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="8" y1="7.5" x2="16" y2="7.5"/><circle cx="8.5" cy="12" r=".8" fill="#fff"/><circle cx="12" cy="12" r=".8" fill="#fff"/><circle cx="15.5" cy="12" r=".8" fill="#fff"/><circle cx="8.5" cy="16" r=".8" fill="#fff"/><circle cx="12" cy="16" r=".8" fill="#fff"/><circle cx="15.5" cy="16" r=".8" fill="#fff"/></svg></button>
+      <span class="rub">RUB</span>
+    </div>
+    <div class="fr">
+      <span class="fr-ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span>
+      <button type="button" class="fr-date" id="fDateBtn"></button>
+      <span class="fr-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><line x1="12" y1="7.5" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="13.8"/></svg></span>
+      <input type="time" class="fr-time" id="fTime">
+    </div>
+    <div class="fr" id="catRow">
+      <span class="fr-ic"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2.5" width="6" height="4" rx="1"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="16" y2="15"/></svg></span>
+      <div class="fr-col"><span class="fr-cap">Категория</span><select class="fr-sel" id="fCatSel"></select></div>
+    </div>
+    <div class="fr">
+      <span class="fr-ic"><svg viewBox="0 0 24 24"><path d="M3 9l9-5.5L21 9"/><line x1="4.5" y1="9.5" x2="4.5" y2="18"/><line x1="9.5" y1="9.5" x2="9.5" y2="18"/><line x1="14.5" y1="9.5" x2="14.5" y2="18"/><line x1="19.5" y1="9.5" x2="19.5" y2="18"/><line x1="3" y1="20.5" x2="21" y2="20.5"/></svg></span>
+      <div class="fr-col"><span class="fr-cap" id="accFromLbl">Счёт</span><select class="fr-sel" id="fAcc"></select></div>
+    </div>
+    <div class="fr" id="accToRow" style="display:none">
+      <span class="fr-ic"><svg viewBox="0 0 24 24"><path d="M4 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+      <div class="fr-col"><span class="fr-cap">На счёт</span><select class="fr-sel" id="fAccTo"></select></div>
+    </div>
+    <div class="fr">
+      <span class="fr-ic"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg></span>
+      <input class="fr-note" id="fNote" placeholder="Примечания" autocomplete="off">
+    </div>
   </div>
-  <div class="row2">
-    <div><div class="f-label" id="accFromLbl">Счёт</div><select class="f-sel" id="fAcc"></select></div>
-    <div id="accToWrap" style="display:none"><div class="f-label">На счёт</div><select class="f-sel" id="fAccTo"></select></div>
-    <div id="dateWrap"><div class="f-label">Дата</div><input type="date" class="f-in" id="fDate"></div>
+  <button class="fab-save" id="fSave" aria-label="Сохранить">✓</button>
+  <div class="fs-bottom" id="typeSeg">
+    <button data-t="expense" class="on">РАСХОД</button>
+    <button data-t="income">ДОХОД</button>
+    <button data-t="transfer">ПЕРЕВОД</button>
   </div>
-  <div class="f-label">Название (магазин, за что)</div>
-  <input class="f-in" id="fMerchant" placeholder="Например: За свет" autocomplete="off">
-  <div class="f-label">Заметка</div>
-  <input class="f-in" id="fNote" placeholder="Необязательно" autocomplete="off">
-  <div style="margin-top:16px">
-    <button class="btn btn-blue" id="fSave">Сохранить</button>
-    <button class="btn btn-red" id="fDel" style="display:none">Удалить операцию</button>
-    <button class="btn btn-line" id="fCancel">Отмена</button>
+</div>
+
+<!-- КАЛЬКУЛЯТОР -->
+<div class="modal-ovl" id="calcOvl">
+  <div class="calcm">
+    <div class="calcm-disp"><div class="calcm-exp" id="calcExp"></div><div class="calcm-val" id="calcVal">0</div></div>
+    <div class="calcm-grid" id="calcGrid">
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button data-k="del" class="opc">⌫</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button data-k="/" class="opc">÷</button>
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button data-k="*" class="opc">×</button>
+      <button data-k=",">,</button><button data-k="0">0</button><button data-k="%">%</button><button data-k="-" class="opc">−</button>
+      <button data-k="C" class="c">C</button><button data-k="ok" class="okb" style="grid-column:span 2">OK</button><button data-k="+" class="opc">+</button>
+    </div>
   </div>
-</div></div>
+</div>
+
+<!-- КАЛЕНДАРЬ -->
+<div class="modal-ovl" id="calOvl">
+  <div class="calm">
+    <div class="calm-head"><div class="calm-year" id="calYear"></div><div class="calm-date" id="calDate"></div></div>
+    <div class="calm-nav"><button id="calPrev">‹</button><b id="calMonth"></b><button id="calNext">›</button></div>
+    <div class="calm-grid" id="calGrid"></div>
+    <div class="calm-foot"><button id="calCancel">ОТМЕНА</button><button id="calOk">ОК</button></div>
+  </div>
+</div>
 
 <!-- SHEET: НАПОМИНАНИЕ -->
 <div class="sheet" id="remSheet"><div class="sheet-inner">
@@ -260,7 +352,6 @@ textarea.f-in{min-height:80px;resize:vertical}
   </div>
   <div class="f-label">Сумма — нажмите, чтобы ввести</div>
   <input class="f-amt" id="rAmt" placeholder="0,00" autocomplete="off" readonly>
-  <div class="calc" id="rCalc"></div>
   <div class="f-label">Категория</div>
   <select class="f-sel" id="rCatSel"></select>
   <div class="row2">
@@ -312,6 +403,8 @@ textarea.f-in{min-height:80px;resize:vertical}
   </div>
   <div class="f-label">Последние 4 цифры карты (из СМС)</div>
   <input class="f-in" id="aTail" inputmode="numeric" maxlength="4" placeholder="Чтобы СМС попадали на этот счёт">
+  <div class="f-label">Кредитный лимит (только для кредитки)</div>
+  <input class="f-in" id="aLimit" inputmode="decimal" placeholder="Например: 80000">
   <div style="margin-top:16px">
     <button class="btn btn-blue" id="aSave">Сохранить</button>
     <button class="btn btn-red" id="aDel" style="display:none">Удалить счёт</button>
@@ -420,12 +513,24 @@ function load(){
     }
   }catch(e){}
   return {
-    accounts:[{id:'a1',name:'Кошелёк',icon:'👛',start:0,tail:''}],
+    accounts:[
+      {id:'a1',name:'Сбер карта',icon:'💳',start:0,tail:''},
+      {id:'a2',name:'Кредитная карта',icon:'💳',start:-13000,tail:'',limit:80000},
+      {id:'a3',name:'Сберегательный счёт',icon:'🐷',start:0,tail:''}
+    ],
     cats:SEED_CATS,txs:[],rems:[],merchantMap:{},seenSms:[]
   };
 }
 let db=load();
 if(!db.rems)db.rems=[];
+if(!db.accV3){
+  const a1=db.accounts.find(a=>a.name==='Кошелёк');
+  if(a1){a1.name='Сбер карта';a1.icon='💳';}
+  if(!db.accounts.some(a=>/кредит/i.test(a.name)))db.accounts.push({id:'a2',name:'Кредитная карта',icon:'💳',start:-13000,tail:'',limit:80000});
+  if(!db.accounts.some(a=>/сберегат/i.test(a.name)))db.accounts.push({id:'a3',name:'Сберегательный счёт',icon:'🐷',start:0,tail:''});
+  db.accV3=true;
+  try{save();}catch(e){}
+}
 function save(){localStorage.setItem(LS_KEY,JSON.stringify(db));}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
@@ -661,6 +766,7 @@ function openSheet(id){$('#ovl').classList.add('on');$(id).classList.add('on');}
 function closeSheets(){
   $('#ovl').classList.remove('on');
   document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
+  $('#txFs').classList.remove('on');
   $('#drawer').classList.remove('on');
   pendingSms=null;
 }
@@ -680,49 +786,83 @@ document.querySelectorAll('.dr-item').forEach(b=>b.addEventListener('click',()=>
   else if(act==='restore'){$('#impFile').click();}
 }));
 
-/* ================= КАЛЬКУЛЯТОР ================= */
+/* ================= КАЛЬКУЛЯТОР (ОКОШКО) ================= */
 const OPS={'+':(a,b)=>a+b,'-':(a,b)=>a-b,'*':(a,b)=>a*b,'/':(a,b)=>b===0?0:a/b};
 const OPSYM={'+':'+','-':'−','*':'×','/':'÷'};
-function makeCalc(inputId,calcId){
-  const inp=$('#'+inputId),box=$('#'+calcId);
-  let acc=null,op=null;
-  box.innerHTML='<div class="calc-exp"> </div><div class="calc-grid">'
-    +['7','8','9','/','4','5','6','*','1','2','3','-','C','0',',','+'].map(k=>{
-      const cls=(OPSYM[k]||k==='C')?' class="op"':'';
-      return '<button type="button" data-k="'+k+'"'+cls+'>'+(OPSYM[k]||k)+'</button>';
-    }).join('')
-    +'<button type="button" data-k="del">⌫</button>'
-    +'<button type="button" data-k="=" class="op">=</button>'
-    +'<button type="button" data-k="ok" class="ok" style="grid-column:span 2">Готово ✓</button>'
-    +'</div>';
-  const exp=box.querySelector('.calc-exp');
-  const val=()=>parseFloat(String(inp.value).replace(/\s/g,'').replace(',','.'))||0;
-  const show=v=>String(Math.round(v*100)/100).replace('.',',');
-  const updExp=()=>{exp.textContent=(acc!==null&&op)?fmtN.format(acc)+' '+OPSYM[op]:' ';};
-  function equals(){
-    if(acc!==null&&op&&inp.value!==''){inp.value=show(OPS[op](acc,val()));}
-    acc=null;op=null;updExp();
-  }
-  box.addEventListener('click',e=>{
-    const b=e.target.closest('button');if(!b)return;
-    const k=b.dataset.k;
-    if(k>='0'&&k<='9'){if(inp.value.length<12)inp.value+=k;}
-    else if(k===','){if(!inp.value.includes(','))inp.value=(inp.value||'0')+',';}
-    else if(k==='del'){inp.value=inp.value.slice(0,-1);}
-    else if(k==='C'){inp.value='';acc=null;op=null;updExp();}
-    else if(k==='='){equals();}
-    else if(k==='ok'){equals();box.classList.remove('on');}
-    else if(OPSYM[k]){
-      if(inp.value!==''){acc=(acc!==null&&op)?OPS[op](acc,val()):val();inp.value='';}
-      if(acc!==null){op=k;updExp();}
-    }
-  });
-  inp.addEventListener('click',()=>{box.classList.add('on');});
-  return {
-    reset(open){acc=null;op=null;updExp();box.classList.toggle('on',!!open);},
-    open(){box.classList.add('on');}
-  };
+const calcM={acc:null,op:null,entry:'',onOk:null};
+const calcShow=v=>String(Math.round(v*100)/100).replace('.',',');
+function calcOpen(initial,onOk){
+  calcM.acc=null;calcM.op=null;calcM.onOk=onOk;
+  calcM.entry=initial&&parseFloat(String(initial).replace(',','.'))?String(initial):'';
+  calcUpd();
+  $('#calcOvl').classList.add('on');
 }
+function calcUpd(){
+  $('#calcVal').textContent=calcM.entry||'0';
+  $('#calcExp').textContent=(calcM.acc!==null&&calcM.op)?fmtN.format(calcM.acc)+' '+OPSYM[calcM.op]:'';
+}
+$('#calcGrid').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const k=b.dataset.k;
+  const val=()=>parseFloat(calcM.entry.replace(',','.'))||0;
+  if(k>='0'&&k<='9'){if(calcM.entry.length<12)calcM.entry+=k;}
+  else if(k===','){if(!calcM.entry.includes(','))calcM.entry=(calcM.entry||'0')+',';}
+  else if(k==='%'){if(calcM.entry)calcM.entry=calcShow(val()/100);}
+  else if(k==='del'){calcM.entry=calcM.entry.slice(0,-1);}
+  else if(k==='C'){calcM.entry='';calcM.acc=null;calcM.op=null;}
+  else if(OPSYM[k]){
+    if(calcM.entry!==''){calcM.acc=(calcM.acc!==null&&calcM.op)?OPS[calcM.op](calcM.acc,val()):val();calcM.entry='';}
+    if(calcM.acc!==null)calcM.op=k;
+  }
+  else if(k==='ok'){
+    if(calcM.acc!==null&&calcM.op&&calcM.entry!=='')calcM.entry=calcShow(OPS[calcM.op](calcM.acc,val()));
+    $('#calcOvl').classList.remove('on');
+    if(calcM.onOk)calcM.onOk(calcM.entry);
+    return;
+  }
+  calcUpd();
+});
+$('#calcOvl').addEventListener('click',e=>{if(e.target.id==='calcOvl')$('#calcOvl').classList.remove('on');});
+
+/* ================= КАЛЕНДАРЬ (ОКОШКО) ================= */
+const DOW_SHORT=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+const calSt={view:null,sel:null,onOk:null};
+function calOpen(value,onOk){
+  calSt.sel=value||dayKey(Date.now());
+  calSt.view=keyToDate(calSt.sel);calSt.view.setDate(1);
+  calSt.onOk=onOk;
+  calRender();
+  $('#calOvl').classList.add('on');
+}
+function calRender(){
+  const s=keyToDate(calSt.sel);
+  $('#calYear').textContent=s.getFullYear();
+  $('#calDate').textContent=DOW_SHORT[s.getDay()]+', '+MONTHS_GEN[s.getMonth()]+' '+s.getDate();
+  const v=calSt.view;
+  $('#calMonth').textContent=MONTHS_GEN[v.getMonth()]+' '+v.getFullYear();
+  let html='';
+  for(const w of ['В','П','В','С','Ч','П','С'])html+='<div class="wd">'+w+'</div>';
+  const first=new Date(v.getFullYear(),v.getMonth(),1).getDay();
+  const days=new Date(v.getFullYear(),v.getMonth()+1,0).getDate();
+  for(let i=0;i<first;i++)html+='<button disabled></button>';
+  for(let d=1;d<=days;d++){
+    const k=v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    html+='<button data-k="'+k+'"'+(k===calSt.sel?' class="sel"':'')+'>'+d+'</button>';
+  }
+  $('#calGrid').innerHTML=html;
+}
+$('#calGrid').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-k]');if(!b)return;
+  calSt.sel=b.dataset.k;calRender();
+});
+$('#calPrev').addEventListener('click',()=>{calSt.view.setMonth(calSt.view.getMonth()-1);calRender();});
+$('#calNext').addEventListener('click',()=>{calSt.view.setMonth(calSt.view.getMonth()+1);calRender();});
+$('#calCancel').addEventListener('click',()=>$('#calOvl').classList.remove('on'));
+$('#calOk').addEventListener('click',()=>{
+  $('#calOvl').classList.remove('on');
+  if(calSt.onOk)calSt.onOk(calSt.sel);
+});
+$('#calOvl').addEventListener('click',e=>{if(e.target.id==='calOvl')$('#calOvl').classList.remove('on');});
 
 /* ================= КАТЕГОРИИ: ВЫПАДАЮЩИЙ СПИСОК ================= */
 function fillCatSelect(sel,type,selected){
@@ -738,15 +878,22 @@ function fillCatSelect(sel,type,selected){
   sel.innerHTML=html;
 }
 
-/* ================= ОПЕРАЦИЯ: SHEET ================= */
+/* ================= ОПЕРАЦИЯ: ПОЛНОЭКРАННАЯ ФОРМА ================= */
 let editTx=null,sheetType='expense',sheetCat=null,pendingSms=null;
-const fCalcCtl=makeCalc('fAmt','fCalc');
+let fAmtVal='',fDateKey=dayKey(Date.now());
+function updAmt(){
+  const n=parseFloat(String(fAmtVal).replace(',','.'));
+  $('#fAmtBtn').textContent=n?fmtN.format(n):'0,00';
+}
+function updDateBtn(){$('#fDateBtn').textContent=dateLine(fDateKey);}
 $('#fCatSel').addEventListener('change',()=>{sheetCat=$('#fCatSel').value||null;});
 function renderCatChips(){
-  $('#catWrap').style.display=sheetType==='transfer'?'none':'';
-  $('#accToWrap').style.display=sheetType==='transfer'?'':'none';
-  $('#dateWrap').style.display=sheetType==='transfer'?'none':'';
+  $('#catRow').style.display=sheetType==='transfer'?'none':'';
+  $('#accToRow').style.display=sheetType==='transfer'?'':'none';
   $('#accFromLbl').textContent=sheetType==='transfer'?'Со счёта':'Счёт';
+  const s=$('#fSign');
+  s.className='sign '+(sheetType==='expense'?'exp':sheetType==='income'?'inc':'tr');
+  s.textContent=sheetType==='expense'?'−':sheetType==='income'?'+':'⇄';
   if(sheetType==='transfer')return;
   const type=sheetType==='income'?'income':'expense';
   if(sheetCat&&!db.cats.some(c=>c.id===sheetCat&&c.type===type))sheetCat=null;
@@ -762,6 +909,11 @@ function setType(t){
   sheetType=t;
   $('#typeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.t===t));
 }
+const openAmtCalc=()=>calcOpen(fAmtVal,v=>{fAmtVal=v;updAmt();});
+$('#fAmtBtn').addEventListener('click',openAmtCalc);
+$('#fCalcBtn').addEventListener('click',openAmtCalc);
+$('#fDateBtn').addEventListener('click',()=>calOpen(fDateKey,k=>{fDateKey=k;updDateBtn();}));
+$('#fsBack').addEventListener('click',closeSheets);
 function fillAccSelects(){
   const opts=db.accounts.map(a=>'<option value="'+a.id+'">'+a.icon+' '+esc(a.name)+'</option>').join('');
   $('#fAcc').innerHTML=opts;$('#fAccTo').innerHTML=opts;$('#rAcc').innerHTML=opts;
@@ -777,28 +929,28 @@ function openTxSheet(tx,smsData){
   const src=tx||smsData||{};
   setType(src.type||'expense');
   sheetCat=src.catId||null;
-  $('#fAmt').value=src.amount?String(src.amount).replace('.',','):'';
+  fAmtVal=src.amount?String(src.amount).replace('.',','):'';
+  updAmt();
   $('#fMerchant').value=src.merchant||'';
   $('#fNote').value=src.note||'';
-  $('#fDate').value=dayKey(src.ts||Date.now());
+  const d0=new Date(src.ts||Date.now());
+  fDateKey=dayKey(d0.getTime());
+  updDateBtn();
+  $('#fTime').value=String(d0.getHours()).padStart(2,'0')+':'+String(d0.getMinutes()).padStart(2,'0');
   renderCatChips();
   if(src.accId)$('#fAcc').value=src.accId;
   if(src.toAccId)$('#fAccTo').value=src.toAccId;
-  fCalcCtl.reset(!src.amount);
-  openSheet('#txSheet');
+  $('#txFs').classList.add('on');
 }
 $('#fabTx').addEventListener('click',()=>openTxSheet(null));
-$('#fCancel').addEventListener('click',closeSheets);
 $('#fSave').addEventListener('click',()=>{
-  const amount=parseFloat(String($('#fAmt').value).replace(/\s/g,'').replace(',','.'));
-  if(!amount||amount<=0){$('#fAmt').focus();return;}
+  const amount=parseFloat(String(fAmtVal).replace(/\s/g,'').replace(',','.'));
+  if(!amount||amount<=0){openAmtCalc();return;}
   if(sheetType!=='transfer'&&!sheetCat){alert('Выберите категорию');return;}
-  const dateStr=$('#fDate').value;
-  let ts=editTx?editTx.ts:Date.now();
-  if(dateStr&&dateStr!==dayKey(ts)){
-    const [y,m,d]=dateStr.split('-').map(Number);
-    const t0=new Date(ts);ts=new Date(y,m-1,d,t0.getHours(),t0.getMinutes()).getTime();
-  }
+  const t0=new Date(editTx?editTx.ts:Date.now());
+  const [y,m,d]=fDateKey.split('-').map(Number);
+  const [hh,mm]=($('#fTime').value||'12:00').split(':').map(Number);
+  const ts=new Date(y,m-1,d,hh||t0.getHours(),mm??t0.getMinutes()).getTime();
   const rec={
     id:editTx?editTx.id:uid(),ts,
     type:sheetType,amount,
@@ -823,7 +975,7 @@ $('#fDel').addEventListener('click',()=>{
 
 /* ================= НАПОМИНАНИЕ: SHEET ================= */
 let editRem=null,remType='expense',remCat=null;
-const rCalcCtl=makeCalc('rAmt','rCalc');
+$('#rAmt').addEventListener('click',()=>calcOpen($('#rAmt').value,v=>{$('#rAmt').value=v;}));
 $('#rCatSel').addEventListener('change',()=>{remCat=$('#rCatSel').value||null;});
 function renderRemChips(){
   if(remCat&&!db.cats.some(c=>c.id===remCat&&c.type===remType))remCat=null;
@@ -854,7 +1006,6 @@ function openRemSheet(r){
   $('#rDayBefore').checked=r?r.dayBefore!==false:true;
   renderRemChips();
   if(r&&r.accId)$('#rAcc').value=r.accId;
-  rCalcCtl.reset(!r);
   openSheet('#remSheet');
 }
 $('#fabRem').addEventListener('click',()=>openRemSheet(null));
@@ -951,8 +1102,11 @@ function accBalance(a){
 function renderAccList(){
   $('#accList').innerHTML=db.accounts.map(a=>{
     const b=accBalance(a);
+    let sub=a.tail?'Карта ···'+esc(a.tail):'Без привязки к СМС';
+    if(a.limit&&b<0)sub='Долг '+fmt(-b)+' · доступно '+fmt(a.limit+b);
+    else if(a.limit)sub='Кредитный лимит '+fmt(a.limit);
     return '<div class="row" data-id="'+a.id+'"><div class="cic" style="background:var(--blue);border-radius:12px">'+a.icon+'</div>'
-      +'<div class="rmid"><div class="rname">'+esc(a.name)+'</div><div class="rsub">'+(a.tail?'Карта ···'+esc(a.tail):'Без привязки к СМС')+'</div></div>'
+      +'<div class="rmid"><div class="rname">'+esc(a.name)+'</div><div class="rsub">'+sub+'</div></div>'
       +'<div class="rright"><div class="ramt'+(b<0?' a-exp':'')+'">'+fmt(b)+'</div></div></div>';
   }).join('');
   $('#accList').querySelectorAll('.row').forEach(el=>el.addEventListener('click',()=>openAccSheet(db.accounts.find(a=>a.id===el.dataset.id))));
@@ -962,9 +1116,10 @@ function openAccSheet(a){
   $('#accSheetTitle').textContent=a?'Счёт':'Новый счёт';
   $('#aDel').style.display=a?'':'none';
   $('#aName').value=a?a.name:'';
-  $('#aIcon').value=a?a.icon:'👛';
+  $('#aIcon').value=a?a.icon:'💳';
   $('#aStart').value=a?String(a.start):'';
   $('#aTail').value=a?(a.tail||''):'';
+  $('#aLimit').value=a&&a.limit?String(a.limit):'';
   document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
   openSheet('#accSheet');
 }
@@ -978,7 +1133,8 @@ $('#aSave').addEventListener('click',()=>{
     id:editAcc?editAcc.id:uid(),name,
     icon:$('#aIcon').value,
     start:parseFloat(String($('#aStart').value).replace(/\s/g,'').replace(',','.'))||0,
-    tail:$('#aTail').value.replace(/\D/g,'').slice(0,4)
+    tail:$('#aTail').value.replace(/\D/g,'').slice(0,4),
+    limit:parseFloat(String($('#aLimit').value).replace(/\s/g,'').replace(',','.'))||0
   };
   if(editAcc){const i=db.accounts.findIndex(x=>x.id===editAcc.id);db.accounts[i]=rec;}
   else db.accounts.push(rec);
