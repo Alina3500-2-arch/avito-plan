@@ -189,10 +189,17 @@ textarea.f-in{min-height:80px;resize:vertical}
 .sbody b{color:var(--ink)}
 .small{font-size:13px;color:var(--ink3);line-height:1.5}
 .due-banner{background:#FFF3E5;border:1px solid #F8D9B4;color:#8A4B00;border-radius:12px;padding:10px 14px;font-size:14px;font-weight:600;margin-bottom:10px}
-.save-tile{border-radius:12px;padding:13px 15px;font-size:15px;font-weight:700;margin:2px 0 10px}
+.save-tile{border-radius:12px;padding:13px 15px;font-size:15px;font-weight:700;margin:2px 0 8px}
 .save-tile.ok{background:#E6F4E6;color:#1B5E20}
 .save-tile.bad{background:#FDECEA;color:#B71C1C}
 .save-tile.even{background:var(--pill);color:var(--ink2)}
+.save-tile.piggy{background:#E8F0FB;color:#1565C0}
+
+/* SWIPE TO PAY */
+.swipe-wrap{position:relative;overflow:hidden;border-radius:12px}
+.swipe-pay{position:absolute;right:0;top:6px;bottom:6px;width:98px;background:var(--green);color:#fff;border:none;border-radius:12px;font-size:13.5px;font-weight:800;cursor:pointer}
+.swipe-wrap .row{position:relative;background:#fff;touch-action:pan-y}
+.fab-mini{position:absolute;right:24px;bottom:calc(126px + env(safe-area-inset-bottom));width:46px;height:46px;border-radius:50%;background:#fff;border:2px solid var(--green);font-size:20px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.2);z-index:2}
 .due-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
 .due-row:last-child{border-bottom:none}
 .due-mid{flex:1;min-width:0}
@@ -332,7 +339,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 7</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 8</div></div>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
   <div class="dr-sep"></div>
@@ -480,6 +487,7 @@ textarea.f-in{min-height:80px;resize:vertical}
       <button class="btn btn-line" id="rIcs">🔔 В Календарь</button>
     </div>
   </div>
+  <button class="fab-mini" id="rPaidFab" style="display:none" title="Записать оплату" aria-label="Записать оплату">🧾</button>
   <button class="fab-save" id="rSave" aria-label="Сохранить">✓</button>
   <div class="fs-bottom" id="rTypeSeg">
     <button data-t="expense" class="on">РАСХОД</button>
@@ -866,7 +874,8 @@ function renderRems(){
       const aCls=isTr?'a-tr':(r.type==='expense'?'a-exp':'a-inc');
       const sign=r.type==='expense'?'-':'';
       const sub=isTr?'Отложить на '+esc(accOf(r.toAccId)?.name||'счёт'):esc(c?c.name:'Без категории');
-      html+='<div class="row" data-id="'+r.id+'">'
+      html+='<div class="swipe-wrap" data-id="'+r.id+'"><button class="swipe-pay">✓ Записать</button>'
+        +'<div class="row">'
         +'<div class="cic '+icCls+'">'+(isTr?'🐷':(c?c.icon:'📦'))+'</div>'
         +'<div class="rmid"><div class="rname">'+esc(r.name)+(r.repeat!=='none'?' <span class="rep">⟳</span>':'')+'</div>'
         +'<div class="rsub">'+sub+'</div>'
@@ -874,11 +883,40 @@ function renderRems(){
         +'</div>'
         +'<div class="rright"><div class="ramt '+aCls+'">'+sign+fmt(r.amount)+' <span style="font-weight:400">⏰</span></div>'
         +'<div class="rbal">'+esc(accOf(r.accId)?.name||'')+' · '+esc(r.time||'09:00')+'</div></div>'
-        +'</div>';
+        +'</div></div>';
     }
   }
   box.innerHTML=html;
-  box.querySelectorAll('.row').forEach(el=>el.addEventListener('click',()=>openRemSheet(db.rems.find(r=>r.id===el.dataset.id))));
+  box.querySelectorAll('.swipe-wrap').forEach(w=>{
+    const row=w.querySelector('.row');
+    const id=w.dataset.id;
+    let sx=0,dx=0,drag=false;
+    row.addEventListener('pointerdown',e=>{sx=e.clientX;dx=0;drag=true;row.style.transition='none';});
+    row.addEventListener('pointermove',e=>{
+      if(!drag)return;
+      dx=e.clientX-sx;
+      if(dx<0)row.style.transform='translateX('+Math.max(dx,-112)+'px)';
+    });
+    const end=()=>{
+      if(!drag)return;
+      drag=false;
+      row.style.transition='transform .18s';
+      if(dx<-55){row.style.transform='translateX(-106px)';w.dataset.open='1';}
+      else{row.style.transform='translateX(0)';w.dataset.open='';}
+    };
+    row.addEventListener('pointerup',end);
+    row.addEventListener('pointercancel',end);
+    row.addEventListener('pointerleave',end);
+    row.addEventListener('click',()=>{
+      if(Math.abs(dx)>8){dx=0;return;}
+      if(w.dataset.open){row.style.transition='transform .18s';row.style.transform='translateX(0)';w.dataset.open='';return;}
+      openRemSheet(db.rems.find(r=>r.id===id));
+    });
+    w.querySelector('.swipe-pay').addEventListener('click',()=>{
+      const r=db.rems.find(x=>x.id===id);
+      if(r)payReminder({...r});
+    });
+  });
 }
 function plural(n,one,few,many){
   n=Math.abs(n)%100;const n1=n%10;
@@ -907,10 +945,13 @@ function renderSum(){
   const diff=incTotal-expTotal;
   let html='';
   if(incTotal||expTotal){
-    if(diff>0)html+='<div class="save-tile ok">✓ В этом месяце удалось отложить: '+fmt(diff)+'</div>';
+    if(diff>0)html+='<div class="save-tile ok">✓ В этом месяце удалось сэкономить: '+fmt(diff)+'</div>';
     else if(diff<0)html+='<div class="save-tile bad">⚠ Расходы превысили доходы на '+fmt(-diff)+'</div>';
     else html+='<div class="save-tile even">Доходы равны расходам</div>';
   }
+  const savAccIds=db.accounts.filter(a=>/сберегат|сбережен/i.test(a.name)).map(a=>a.id);
+  const saved=inMonth.filter(t=>t.type==='transfer'&&savAccIds.includes(t.toAccId)).reduce((s,t)=>s+t.amount,0);
+  if(savAccIds.length)html+='<div class="save-tile piggy">🐷 Отложила на сберегательный: '+fmt(saved)+'</div>';
   html+='<div class="sum-head"><span class="t" style="color:var(--green)">ДОХОД</span><span class="v">'+fmt(incTotal)+'</span></div>';
   for(const c of incCats)html+=catRow(c,sums[c.id]||0,'inc',c.id);
   html+='<div class="sum-head"><span class="t exp" style="color:var(--blue)">РАСХОД</span><span class="v">'+fmt(expTotal)+'</span></div>';
@@ -1312,6 +1353,7 @@ function openRemSheet(r){
   $('#remSheetTitle').textContent=r?'Напоминание':'Новое напоминание';
   $('#rDel').style.display=r?'':'none';
   $('#rPaid').style.display=r?'':'none';
+  $('#rPaidFab').style.display=r?'':'none';
   remType=r?r.type:'expense';
   $('#rTypeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.t===remType));
   remCat=r?r.catId:null;
@@ -1383,12 +1425,14 @@ function payReminder(rec){
   save();rerender();
   return nd;
 }
-$('#rPaid').addEventListener('click',()=>{
+function payFromForm(){
   const rec=readRemForm();if(!rec)return;
   const nd=payReminder(rec);
   closeSheets();
   alert('Записала операцию «'+rec.name+'»'+(nd?'. Следующее напоминание: '+dateLine(nd):''));
-});
+}
+$('#rPaid').addEventListener('click',payFromForm);
+$('#rPaidFab').addEventListener('click',payFromForm);
 
 /* ================= ОКОШКО «ПОРА ОПЛАТИТЬ» ================= */
 function renderDueList(focusId){
