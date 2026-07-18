@@ -41,13 +41,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate, WKDownloadDelegate {
     var webView: WKWebView!
     let appURL = URL(string: "https://alina3500-2-arch.github.io/avito-plan/money.html")!
-    var pendingJS: String?
+    var pendingJS: [String] = []
     var downloadDest: URL?
 
     override func viewDidLoad() {
         super.viewDidLoad()
         let cfg = WKWebViewConfiguration()
         cfg.userContentController.add(self, name: "reminders")
+        cfg.userContentController.add(self, name: "inboxCount")
         cfg.applicationNameForUserAgent = "MoiDengiApp"
         webView = WKWebView(frame: view.bounds, configuration: cfg)
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
@@ -58,6 +59,27 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         view.backgroundColor = .white
         webView.load(URLRequest(url: appURL))
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
+        NotificationCenter.default.addObserver(self, selector: #selector(onForeground),
+                                               name: UIApplication.willEnterForegroundNotification, object: nil)
+    }
+
+    @objc func onForeground() {
+        drainInbox()
+    }
+
+    // забирает СМС, дописанные автоматизацией в Файлы («На iPhone/Мои деньги/inbox.txt»),
+    // пока приложение было закрыто/телефон заблокирован
+    func drainInbox() {
+        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("inbox.txt")
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return }
+        try? FileManager.default.removeItem(at: url)
+        let lines = text.split(whereSeparator: \.isNewline).map(String.init)
+            .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        guard !lines.isEmpty else { return }
+        let json = (try? JSONSerialization.data(withJSONObject: lines))
+            .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
+        runJS("importInboxTexts(" + json + ")")
     }
 
     // MARK: deep links (moidengi://sms?text=..., moidengi://pay?id=...)
@@ -85,22 +107,38 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
 
     func runJS(_ js: String) {
         if webView.isLoading {
-            pendingJS = js
+            pendingJS.append(js)
         } else {
             webView.evaluateJavaScript(js, completionHandler: nil)
         }
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        if let js = pendingJS {
-            pendingJS = nil
-            webView.evaluateJavaScript(js, completionHandler: nil)
-        }
+        for js in pendingJS { webView.evaluateJavaScript(js, completionHandler: nil) }
+        pendingJS = []
+        drainInbox()
     }
 
     // MARK: reminders -> local notifications
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage) {
+        if message.name == "inboxCount" {
+            let n = (message.body as? Int) ?? ((message.body as? Double).map(Int.init) ?? 0)
+            let center = UNUserNotificationCenter.current()
+            if n > 0 {
+                let content = UNMutableNotificationContent()
+                content.title = "Незаписанные покупки"
+                content.body = "Операций ждёт записи: \(n). Загляните в приложение."
+                content.sound = .default
+                var dc = DateComponents(); dc.hour = 20; dc.minute = 0
+                let trig = UNCalendarNotificationTrigger(dateMatching: dc, repeats: true)
+                center.add(UNNotificationRequest(identifier: "inbox_daily", content: content, trigger: trig),
+                           withCompletionHandler: nil)
+            } else {
+                center.removePendingNotificationRequests(withIdentifiers: ["inbox_daily"])
+            }
+            return
+        }
         guard message.name == "reminders", let arr = message.body as? [[String: Any]] else { return }
         let center = UNUserNotificationCenter.current()
         center.removeAllPendingNotificationRequests()

@@ -20,8 +20,10 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .appbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 .appbar-in{max-width:560px;margin:0 auto;padding:10px 14px 0;padding-top:calc(10px + env(safe-area-inset-top))}
 .bar-row{display:flex;align-items:center;justify-content:space-between}
-.burger{background:none;border:none;padding:6px 4px;cursor:pointer}
+.burger{background:none;border:none;padding:6px 4px;cursor:pointer;position:relative}
 .burger span{display:block;width:26px;height:3px;background:var(--ink);border-radius:2px;margin:4px 0}
+.burger .bdot{position:absolute;top:0;right:-4px;width:10px;height:10px;border-radius:50%;background:var(--red);display:none}
+.burger .bdot.on{display:block}
 .bar-title{font-size:14px;font-weight:600;color:var(--ink3)}
 /* TABS */
 .tabs{display:flex;margin-top:6px;border-bottom:1px solid var(--line)}
@@ -255,7 +257,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <header class="appbar"><div class="appbar-in">
   <div class="bar-row">
-    <button class="burger" id="burger" aria-label="Меню"><span></span><span></span><span></span></button>
+    <button class="burger" id="burger" aria-label="Меню"><span></span><span></span><span></span><span class="bdot" id="ibDot"></span></button>
     <div class="bar-title" id="barTitle"></div>
     <div style="width:34px"></div>
   </div>
@@ -340,7 +342,8 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 10</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 11</div></div>
+  <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
   <div class="dr-sep"></div>
@@ -558,6 +561,16 @@ textarea.f-in{min-height:80px;resize:vertical}
   </div>
 </div></div>
 
+<!-- SHEET: НЕЗАПИСАННЫЕ ОПЕРАЦИИ -->
+<div class="sheet" id="inboxSheet"><div class="sheet-inner">
+  <div class="sheet-grip"></div>
+  <h2>📥 Незаписанные операции</h2>
+  <p class="small" id="ibCount" style="margin-bottom:8px"></p>
+  <div id="ibList"></div>
+  <button class="btn btn-green" id="ibAllKnown" style="margin-top:12px">✓ Записать все со знакомой категорией</button>
+  <button class="btn btn-line" id="ibClose">Позже</button>
+</div></div>
+
 <!-- SHEET: КАТЕГОРИЯ ЗА МЕСЯЦ -->
 <div class="sheet" id="catTxSheet"><div class="sheet-inner">
   <div class="sheet-grip"></div>
@@ -656,6 +669,7 @@ function load(){
 }
 let db=load();
 if(!db.rems)db.rems=[];
+if(!db.inbox)db.inbox=[];
 if(!db.accV3){
   const a1=db.accounts.find(a=>a.name==='Кошелёк');
   if(a1){a1.name='Сбер карта';a1.icon='💳';}
@@ -686,6 +700,11 @@ function syncNativeReminders(){
         id:r.id,name:r.name,amount:r.amount,due:r.due,time:r.time||'09:00',
         repeat:r.repeat||'none',dayBefore:r.dayBefore!==false
       })));
+    }
+  }catch(e){}
+  try{
+    if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.inboxCount){
+      window.webkit.messageHandlers.inboxCount.postMessage((db.inbox||[]).length);
     }
   }catch(e){}
 }
@@ -1143,7 +1162,7 @@ function closeSheets(){
   document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.fs').forEach(s=>s.classList.remove('on'));
   $('#drawer').classList.remove('on');
-  pendingSms=null;
+  if(pendingSms){inboxAdd(pendingSms);pendingSms=null;rerender();}
 }
 $('#ovl').addEventListener('click',closeSheets);
 
@@ -1154,6 +1173,7 @@ document.querySelectorAll('.dr-item').forEach(b=>b.addEventListener('click',()=>
   $('#drawer').classList.remove('on');
   if(act==='accs'){renderAccList();openSheet('#accsSheet');}
   else if(act==='cats'){renderCatMan();openSheet('#catsSheet');}
+  else if(act==='inbox'){openInboxSheet();}
   else if(act==='sms'){openSheet('#smsSheet');}
   else if(act==='setup'){openSheet('#setupSheet');}
   else if(act==='csv'){closeSheets();exportCsv();}
@@ -1339,7 +1359,11 @@ $('#fSave').addEventListener('click',()=>{
   if(editTx){const i=db.txs.findIndex(t=>t.id===editTx.id);db.txs[i]=rec;}
   else db.txs.push(rec);
   if(rec.merchant&&rec.catId)db.merchantMap[normMerchant(rec.merchant)]=rec.catId;
-  if(pendingSms){db.seenSms.push(smsHash(pendingSms.raw));db.seenSms=db.seenSms.slice(-300);}
+  if(pendingSms){
+    db.seenSms.push(smsHash(pendingSms.raw));db.seenSms=db.seenSms.slice(-300);
+    if(pendingSms.inboxId)db.inbox=db.inbox.filter(x=>x.id!==pendingSms.inboxId);
+    pendingSms=null;
+  }
   save();closeSheets();rerender();
 });
 $('#fDel').addEventListener('click',()=>{
@@ -1643,6 +1667,77 @@ $('#cDel').addEventListener('click',()=>{
   openSheet('#catsSheet');
 });
 
+/* ================= ВХОДЯЩИЕ (НЕЗАПИСАННЫЕ) ================= */
+function inboxAdd(p){
+  const h=smsHash(p.raw);
+  if(db.seenSms.includes(h))return false;
+  if(db.inbox.some(x=>x.raw===p.raw))return false;
+  db.inbox.push({id:uid(),raw:p.raw,ts:Date.now()});
+  save();
+  return true;
+}
+function importInboxTexts(arr){
+  try{
+    for(const t of (arr||[])){
+      const p=parseSms(t);
+      if(p)inboxAdd(p);
+    }
+    rerender();
+    if(db.inbox.length){
+      document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
+      openInboxSheet();
+    }
+  }catch(e){}
+}
+function renderInbox(){
+  $('#ibCount').textContent=db.inbox.length
+    ?db.inbox.length+' '+plural(db.inbox.length,'операция ждёт','операции ждут','операций ждут')+' записи. Нажмите «Записать» — сумма и магазин уже заполнены.'
+    :'';
+  $('#ibList').innerHTML=db.inbox.length?db.inbox.map(x=>{
+    const p=parseSms(x.raw);
+    const c=p&&p.catId?catOf(p.catId):null;
+    return '<div class="due-row"><div class="cic '+(p&&p.type==='income'?'inc':'exp')+'" style="width:38px;height:38px;font-size:17px">'+(c?c.icon:'❓')+'</div>'
+      +'<div class="due-mid"><div class="due-name">'+esc(p?(p.merchant||'Операция'):'Не распознано')+'</div>'
+      +'<div class="due-sub">'+(p?fmt(p.amount)+' · ':'')+(c?esc(c.name):'категория не угадана')+' · '+dateLine(dayKey(x.ts))+'</div></div>'
+      +'<button class="due-btn" data-rec="'+x.id+'" style="background:var(--blue)">Записать</button>'
+      +'<button class="due-btn" data-del="'+x.id+'" style="background:#FDECEA;color:var(--red);margin-left:6px;width:auto;padding:10px 12px">✕</button></div>';
+  }).join(''):'<p class="small" style="padding:8px 0">Всё разобрано 🎉</p>';
+  $('#ibList').querySelectorAll('[data-rec]').forEach(b=>b.addEventListener('click',()=>{
+    const it=db.inbox.find(x=>x.id===b.dataset.rec);
+    if(!it)return;
+    const p=parseSms(it.raw);
+    if(!p){alert('Не получилось разобрать текст. Уберите строку крестиком.');return;}
+    p.inboxId=it.id;
+    document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
+    $('#ovl').classList.remove('on');
+    openTxSheet(null,p);
+  }));
+  $('#ibList').querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{
+    if(!confirm('Убрать без записи?'))return;
+    db.inbox=db.inbox.filter(x=>x.id!==b.dataset.del);
+    save();rerender();renderInbox();
+    if(!db.inbox.length)closeSheets();
+  }));
+}
+function openInboxSheet(){renderInbox();openSheet('#inboxSheet');}
+$('#ibClose').addEventListener('click',closeSheets);
+$('#ibAllKnown').addEventListener('click',()=>{
+  let n=0;
+  for(const it of [...db.inbox]){
+    const p=parseSms(it.raw);
+    if(p&&p.catId){
+      db.txs.push({id:uid(),ts:it.ts,type:p.type,amount:p.amount,catId:p.catId,accId:p.accId,toAccId:null,merchant:p.merchant,note:''});
+      db.seenSms.push(smsHash(p.raw));
+      db.inbox=db.inbox.filter(x=>x.id!==it.id);
+      n++;
+    }
+  }
+  db.seenSms=db.seenSms.slice(-300);
+  save();rerender();renderInbox();
+  alert(n?('Записала операций: '+n+(db.inbox.length?'. Остальные не угаданы — разберите вручную.':'')):'Нет операций со знакомой категорией.');
+  if(!db.inbox.length)closeSheets();
+});
+
 /* ================= СМС ================= */
 function handleSmsText(text,{fromUrl=false}={}){
   const p=parseSms(text);
@@ -1699,7 +1794,11 @@ $('#impFile').addEventListener('change',e=>{
 });
 
 /* ================= INIT ================= */
-function rerender(){renderTxs();renderRems();if(curTab==='sum')renderSum();}
+function rerender(){
+  renderTxs();renderRems();
+  if(curTab==='sum')renderSum();
+  $('#ibDot').classList.toggle('on',db.inbox.length>0);
+}
 rerender();
 syncNativeReminders();
 (function(){
@@ -1716,6 +1815,7 @@ syncNativeReminders();
     openDueSheet(pay);
     return;
   }
+  if(db.inbox.length){openInboxSheet();return;}
   const today=dayKey(Date.now());
   if(db.rems.some(r=>remDiff(r)<=0)&&localStorage.getItem('bcDuePrompt')!==today){
     localStorage.setItem('bcDuePrompt',today);
