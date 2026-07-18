@@ -228,6 +228,10 @@ textarea.f-in{min-height:80px;resize:vertical}
 /* CHARTS */
 .ccard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .ccard h3{font-size:17px;font-weight:800;margin-bottom:14px}
+.fc-row{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:7px 0;border-bottom:1px solid #F0F0F3}
+.fc-row:last-child{border-bottom:none}
+.fc-row span{color:var(--ink2);min-width:0}
+.fc-row b{white-space:nowrap;font-weight:800}
 .ie-bars-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .ie-bars{display:flex;align-items:flex-end;gap:10px;height:170px;margin-bottom:4px}
 .ie-g{flex:1;min-width:54px;display:flex;flex-direction:column;align-items:center;height:100%}
@@ -301,6 +305,10 @@ textarea.f-in{min-height:80px;resize:vertical}
   <!-- НАПОМИНАНИЯ -->
   <section class="sc" id="sc-rem">
     <div id="dueBanner"></div>
+    <div class="ccard" id="fcCard" style="display:none">
+      <h3>Прогноз баланса — <span id="fcAccName"></span></h3>
+      <div id="fcWrap"></div>
+    </div>
     <div id="remList"></div>
   </section>
 
@@ -374,7 +382,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 19</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 20</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -998,7 +1006,27 @@ function remDiff(r){
   const today=keyToDate(dayKey(Date.now()));
   return Math.round((keyToDate(r.due)-today)/864e5);
 }
+function renderBalanceForecast(){
+  const acc=mainAccount();
+  const upcoming=db.rems.filter(r=>r.accId===acc.id||r.toAccId===acc.id).sort((a,b)=>a.due<b.due?-1:1).slice(0,6);
+  if(!acc||!upcoming.length){$('#fcCard').style.display='none';return;}
+  $('#fcCard').style.display='';
+  $('#fcAccName').textContent=acc.name;
+  let bal=accBalance(acc);
+  let html='<div class="fc-row"><span>Сейчас</span><b>'+fmt(bal)+'</b></div>';
+  for(const r of upcoming){
+    let delta=0;
+    if(r.type==='transfer'){
+      if(r.accId===acc.id)delta-=r.amount;
+      if(r.toAccId===acc.id)delta+=r.amount;
+    }else delta=r.type==='income'?r.amount:-r.amount;
+    bal+=delta;
+    html+='<div class="fc-row"><span>'+dateLine(r.due)+' — '+esc(r.name)+' ('+(delta>=0?'+':'')+fmt(delta)+')</span><b class="'+(bal<0?'a-exp':'')+'">'+fmt(bal)+'</b></div>';
+  }
+  $('#fcWrap').innerHTML=html;
+}
 function renderRems(){
+  renderBalanceForecast();
   const box=$('#remList');
   const rems=[...db.rems].sort((a,b)=>a.due<b.due?-1:1);
   const due=rems.filter(r=>remDiff(r)<=1);
@@ -1892,8 +1920,19 @@ $('#cSave').addEventListener('click',()=>{
 });
 $('#cDel').addEventListener('click',()=>{
   if(!editCat)return;
+  const fallbackId=editCat.type==='expense'?'prochie':'prochie_in';
+  const hasFallback=fallbackId!==editCat.id&&db.cats.some(c=>c.id===fallbackId);
   const used=db.txs.some(t=>t.catId===editCat.id)||db.rems.some(r=>r.catId===editCat.id);
-  if(used&&!confirm('Категория используется в операциях — они останутся «Без категории». Удалить?'))return;
+  if(used){
+    const msg=hasFallback
+      ?'Категория используется в операциях — они будут перенесены в «Прочее». Удалить?'
+      :'Категория используется в операциях — они останутся «Без категории». Удалить?';
+    if(!confirm(msg))return;
+  }
+  if(used&&hasFallback){
+    db.txs.forEach(t=>{if(t.catId===editCat.id)t.catId=fallbackId;});
+    db.rems.forEach(r=>{if(r.catId===editCat.id)r.catId=fallbackId;});
+  }
   db.cats=db.cats.filter(c=>c.id!==editCat.id);
   save();renderCatMan();rerender();
   document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
