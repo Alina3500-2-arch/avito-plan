@@ -316,6 +316,11 @@ textarea.f-in{min-height:80px;resize:vertical}
 
   <!-- ДИАГРАММЫ -->
   <section class="sc" id="sc-chart">
+    <div class="bluepill">
+      <button class="nav" id="chPrev">‹</button>
+      <span class="mid" id="chTitle"></span>
+      <button class="nav" id="chNext">›</button>
+    </div>
     <div class="seg" id="chartPeriodSeg">
       <button data-p="1">Месяц</button>
       <button data-p="3" class="on">3 месяца</button>
@@ -369,7 +374,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 18</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 19</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -739,9 +744,18 @@ const IN_APP=/MoiDengiApp/.test(navigator.userAgent);
   const probe=document.createElement('div');
   probe.style.cssText='position:fixed;top:0;left:0;height:0;padding-top:env(safe-area-inset-top);visibility:hidden;pointer-events:none';
   document.documentElement.appendChild(probe);
-  const sat=parseFloat(getComputedStyle(probe).paddingTop)||0;
-  document.documentElement.style.setProperty('--sat-top',sat+'px');
-  probe.remove();
+  function measure(){
+    const sat=parseFloat(getComputedStyle(probe).paddingTop)||0;
+    const cur=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat-top'))||0;
+    if(sat>cur)document.documentElement.style.setProperty('--sat-top',sat+'px');
+  }
+  measure();
+  requestAnimationFrame(measure);
+  setTimeout(measure,300);
+  setTimeout(measure,1000);
+  window.addEventListener('resize',measure);
+  window.addEventListener('orientationchange',measure);
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',measure);
 })();
 function syncNativeReminders(){
   try{
@@ -1157,17 +1171,25 @@ function monthAgg(y,m){
   return {inc,exp};
 }
 let chartPeriod=3;
+let chartEndDate=new Date();chartEndDate.setDate(1);
 $('#chartPeriodSeg').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   chartPeriod=+b.dataset.p;
   $('#chartPeriodSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));
   renderChart();
 });
+$('#chPrev').addEventListener('click',()=>{chartEndDate.setMonth(chartEndDate.getMonth()-1);renderChart();});
+$('#chNext').addEventListener('click',()=>{chartEndDate.setMonth(chartEndDate.getMonth()+1);renderChart();});
 function renderChart(){
-  const now=new Date();
+  const endY=chartEndDate.getFullYear(),endM=chartEndDate.getMonth();
+  if(chartPeriod===1)$('#chTitle').textContent=MONTHS_NOM[endM].toUpperCase()+' '+endY;
+  else{
+    const sd=new Date(endY,endM-(chartPeriod-1),1);
+    $('#chTitle').textContent=MONTHS_NOM[sd.getMonth()].toUpperCase()+' '+sd.getFullYear()+' – '+MONTHS_NOM[endM].toUpperCase()+' '+endY;
+  }
   const months=[];
   for(let i=chartPeriod-1;i>=0;i--){
-    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const d=new Date(endY,endM-i,1);
     months.push({y:d.getFullYear(),m:d.getMonth(),...monthAgg(d.getFullYear(),d.getMonth())});
   }
   const max=Math.max(1,...months.flatMap(x=>[x.inc,x.exp]));
@@ -1176,14 +1198,14 @@ function renderChart(){
     +'<div class="ie-bar exp" style="height:'+Math.max(1,x.exp/max*100)+'%"></div>'
     +'</div><div class="ie-lbl">'+(chartPeriod>3?MONTHS_GEN[x.m].slice(0,3)+'. '+String(x.y).slice(2):MONTHS_GEN[x.m]+' '+x.y+' г.')+'</div></div>').join('');
   const totInc=months.reduce((s,x)=>s+x.inc,0),totExp=months.reduce((s,x)=>s+x.exp,0);
-  const periodLbl=chartPeriod===1?'Последний месяц':chartPeriod===3?'Последние 3 месяца':chartPeriod===6?'Последние полгода':'Последний год';
+  const periodLbl=chartPeriod===1?MONTHS_NOM[endM]+' '+endY:chartPeriod===3?'Последние 3 месяца':chartPeriod===6?'Последние полгода':'Последний год';
   $('#ieTable').innerHTML='<table class="ie-tbl"><tr><th>Тип</th><th>'+periodLbl+'</th></tr>'
    +'<tr><td><span class="dot" style="background:var(--green)"></span>Доход</td><td>'+fmt(totInc)+'</td></tr>'
    +'<tr><td><span class="dot" style="background:var(--red)"></span>Расход</td><td>−'+fmt(totExp)+'</td></tr>'
    +'<tr class="tot"><td>Чистая прибыль</td><td>'+fmt(totInc-totExp)+'</td></tr></table>';
   const prevMonths=[];
   for(let i=chartPeriod*2-1;i>=chartPeriod;i--){
-    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const d=new Date(endY,endM-i,1);
     prevMonths.push(monthAgg(d.getFullYear(),d.getMonth()));
   }
   const prevInc=prevMonths.reduce((s,x)=>s+x.inc,0);
@@ -1196,10 +1218,11 @@ function renderChart(){
     incLine='Заработала '+fmt(totInc)+' — '+(diff>=0?'больше':'меньше')+' на '+fmt(Math.abs(diff))+' ('+pct+'%), чем за предыдущий такой же период ('+fmt(prevInc)+').';
   }
   $('#incWrap').textContent=incLine;
-  const rangeStart=new Date(now.getFullYear(),now.getMonth()-(chartPeriod-1),1).getTime();
+  const rangeStart=new Date(endY,endM-(chartPeriod-1),1).getTime();
+  const rangeEnd=new Date(endY,endM+1,1).getTime();
   const catSums=new Map();
   for(const t of db.txs){
-    if(t.type!=='expense'||t.ts<rangeStart)continue;
+    if(t.type!=='expense'||t.ts<rangeStart||t.ts>=rangeEnd)continue;
     catSums.set(t.catId,(catSums.get(t.catId)||0)+t.amount);
   }
   const topCats=[...catSums.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
@@ -1222,13 +1245,14 @@ function renderChart(){
   }
   const startSum=db.accounts.reduce((s,a)=>s+(+a.start||0),0);
   const pts=[];
+  const nwNow=new Date();
   for(let i=11;i>=0;i--){
-    const end=new Date(now.getFullYear(),now.getMonth()-i+1,1).getTime();
+    const end=new Date(nwNow.getFullYear(),nwNow.getMonth()-i+1,1).getTime();
     let eff=0;
     for(const t of db.txs){
       if(t.ts<end){if(t.type==='income')eff+=t.amount;else if(t.type==='expense')eff-=t.amount;}
     }
-    const md=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const md=new Date(nwNow.getFullYear(),nwNow.getMonth()-i,1);
     pts.push({m:md.getMonth(),v:startSum+eff});
   }
   const W=320,H=150,P=40,PB=20,PT=8;
