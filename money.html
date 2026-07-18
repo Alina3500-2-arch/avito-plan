@@ -13,6 +13,7 @@
 }
 html{color-scheme:light;touch-action:manipulation}
 body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+body.lockscroll{position:fixed;left:0;right:0;width:100%}
 button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .page{max-width:560px;margin:0 auto;padding:0 14px 110px}
 
@@ -37,7 +38,8 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .sc{display:none;padding-top:14px}.sc.on{display:block}
 
 /* BLUE PILL */
-.bluepill{display:flex;align-items:center;justify-content:space-between;background:var(--blue);color:#fff;border-radius:28px;padding:13px 22px;font-size:18px;font-weight:800;box-shadow:0 3px 8px rgba(30,136,229,.3);margin-bottom:14px}
+.bluepill{display:flex;align-items:center;justify-content:space-between;background:var(--blue);color:#fff;border-radius:28px;padding:13px 22px;font-size:18px;font-weight:800;box-shadow:0 3px 8px rgba(30,136,229,.3);margin-bottom:6px}
+.totalAll{text-align:center;font-size:12.5px;color:var(--ink2);margin-bottom:14px}
 .bluepill .nav{background:none;border:none;color:#fff;font-size:20px;font-weight:800;cursor:pointer;padding:0 4px}
 .bluepill .mid{flex:1;text-align:center;font-size:16px;letter-spacing:.02em}
 
@@ -287,6 +289,7 @@ textarea.f-in{min-height:80px;resize:vertical}
   <!-- ОПЕРАЦИИ -->
   <section class="sc on" id="sc-tx">
     <div class="bluepill"><span>ИТОГО</span><span id="hdrBalance">0,00 ₽</span></div>
+    <div class="totalAll" id="totalAllRow">Все счета: <b id="hdrBalanceAll">0,00 ₽</b></div>
     <div id="txList"></div>
   </section>
 
@@ -343,7 +346,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 13</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 14</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -679,6 +682,11 @@ if(!db.accV3){
   db.accV3=true;
   try{save();}catch(e){}
 }
+if(!db.accV4){
+  if(!db.accounts.some(a=>/долг/i.test(a.name)))db.accounts.push({id:'a4',name:'Долги',icon:'🤝',start:0,tail:''});
+  db.accV4=true;
+  try{save();}catch(e){}
+}
 if(!db.savRemV6){
   const sav=db.accounts.find(a=>/сберегат|сбережен/i.test(a.name));
   const main=db.accounts[0];
@@ -732,6 +740,9 @@ function totalBalance(){
     else if(t.type==='income')b+=t.amount;
   }
   return b;
+}
+function mainAccount(){
+  return db.accounts.find(a=>/сбер\s*карта/i.test(a.name))||db.accounts[0];
 }
 function runningMap(){
   const sorted=[...db.txs].sort((a,b)=>a.ts-b.ts||(a.id<b.id?-1:1));
@@ -788,7 +799,8 @@ function smsHash(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))
 
 /* ================= RENDER: ОПЕРАЦИИ ================= */
 function renderTxs(){
-  $('#hdrBalance').textContent=fmt(totalBalance());
+  $('#hdrBalance').textContent=fmt(accBalance(mainAccount()));
+  $('#hdrBalanceAll').textContent=fmt(totalBalance());
   const box=$('#txList');
   if(!db.txs.length){
     box.innerHTML='<div class="empty"><div class="big">🌱</div>Пока нет операций.<br>Нажмите «+» или настройте автоматизацию СМС<br>(меню ☰ → Автоматизация СМС).</div>';
@@ -1177,13 +1189,28 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
 }));
 
 /* ================= SHEETS COMMON ================= */
-function openSheet(id){$('#ovl').classList.add('on');$(id).classList.add('on');}
+let lockScrollY=0;
+function lockBody(){
+  if(document.body.classList.contains('lockscroll'))return;
+  lockScrollY=window.scrollY||document.documentElement.scrollTop||0;
+  document.body.style.top=(-lockScrollY)+'px';
+  document.body.classList.add('lockscroll');
+}
+function unlockBody(){
+  if(!document.body.classList.contains('lockscroll'))return;
+  document.body.classList.remove('lockscroll');
+  document.body.style.top='';
+  window.scrollTo(0,lockScrollY);
+}
+function openSheet(id){$('#ovl').classList.add('on');$(id).classList.add('on');lockBody();}
 function closeSheets(){
   $('#ovl').classList.remove('on');
   document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
   document.querySelectorAll('.fs').forEach(s=>s.classList.remove('on'));
   $('#drawer').classList.remove('on');
   if(pendingSms){inboxAdd(pendingSms);pendingSms=null;rerender();}
+  pendingSms=null;
+  unlockBody();
 }
 $('#ovl').addEventListener('click',closeSheets);
 
@@ -1391,6 +1418,7 @@ function openTxSheet(tx,smsData){
   if(src.accId)$('#fAcc').value=src.accId;
   if(src.toAccId)$('#fAccTo').value=src.toAccId;
   $('#txFs').classList.add('on');
+  lockBody();
 }
 $('#fabTx').addEventListener('click',()=>openTxSheet(null));
 $('#fSave').addEventListener('click',()=>{
@@ -1488,6 +1516,7 @@ function openRemSheet(r){
   renderRemChips();
   if(r&&r.accId)$('#rAcc').value=r.accId;
   $('#remFs').classList.add('on');
+  lockBody();
 }
 $('#fabRem').addEventListener('click',()=>openRemSheet(null));
 function readRemForm(){
