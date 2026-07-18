@@ -19,7 +19,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 
 /* APP BAR */
 .appbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.97);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.appbar-in{max-width:560px;margin:0 auto;padding:10px 14px 0;padding-top:calc(10px + env(safe-area-inset-top))}
+.appbar-in{max-width:560px;margin:0 auto;padding:10px 14px 0;padding-top:calc(10px + var(--sat-top, env(safe-area-inset-top)))}
 .bar-row{display:flex;align-items:center;justify-content:space-between}
 .burger{background:none;border:none;padding:6px 4px;cursor:pointer;position:relative}
 .burger span{display:block;width:26px;height:3px;background:var(--ink);border-radius:2px;margin:4px 0}
@@ -89,7 +89,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 /* DRAWER */
 .ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:80;display:none}
 .ovl.on{display:block}
-.drawer{position:fixed;top:0;bottom:0;left:0;width:82%;max-width:330px;background:#fff;z-index:95;transform:translateX(-103%);transition:transform .22s ease;overflow-y:auto;padding-top:calc(14px + env(safe-area-inset-top))}
+.drawer{position:fixed;top:0;bottom:0;left:0;width:82%;max-width:330px;background:#fff;z-index:95;transform:translateX(-103%);transition:transform .22s ease;overflow-y:auto;padding-top:calc(14px + var(--sat-top, env(safe-area-inset-top)))}
 .drawer.on{transform:translateX(0)}
 .dr-head{padding:18px 20px;border-bottom:1px solid var(--line)}
 .dr-head .nm{font-size:20px;font-weight:800}
@@ -120,7 +120,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 /* FULLSCREEN FORM */
 .fs{position:fixed;inset:0;z-index:85;background:#fff;display:none;flex-direction:column}
 .fs.on{display:flex}
-.fs-top{display:flex;align-items:center;gap:8px;padding:10px 10px 2px;padding-top:calc(10px + env(safe-area-inset-top))}
+.fs-top{display:flex;align-items:center;gap:8px;padding:10px 10px 2px;padding-top:calc(10px + var(--sat-top, env(safe-area-inset-top)))}
 .fs-top .bk{background:none;border:none;font-size:26px;color:var(--ink);cursor:pointer;padding:2px 10px;line-height:1}
 .fs-top .ttl{flex:1;font-size:16px;font-weight:700;color:var(--ink2)}
 .fs-top .trash{background:none;border:none;font-size:20px;cursor:pointer;padding:2px 10px}
@@ -348,7 +348,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 15</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 16</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -713,6 +713,14 @@ if(!db.savRemV6){
   try{save();}catch(e){}
 }
 const IN_APP=/MoiDengiApp/.test(navigator.userAgent);
+(function freezeSafeAreaTop(){
+  const probe=document.createElement('div');
+  probe.style.cssText='position:fixed;top:0;left:0;height:0;padding-top:env(safe-area-inset-top);visibility:hidden;pointer-events:none';
+  document.documentElement.appendChild(probe);
+  const sat=parseFloat(getComputedStyle(probe).paddingTop)||0;
+  document.documentElement.style.setProperty('--sat-top',sat+'px');
+  probe.remove();
+})();
 function syncNativeReminders(){
   try{
     if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.reminders){
@@ -806,7 +814,19 @@ function parseSms(text){
   if(tail){const a=db.accounts.find(x=>x.tail===tail);if(a)accId=a.id;}
   return {amount,type,merchant,tail,catId,accId,known:!!(known&&catOf(known)),raw:t};
 }
-function smsHash(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0;}return 'h'+(h>>>0).toString(36)+'_'+dayKey(Date.now());}
+function smsHash(s){let h=0;for(let i=0;i<s.length;i++){h=(h*31+s.charCodeAt(i))|0;}return 'h'+(h>>>0).toString(36);}
+function reconcileInboxWithTx(rec){
+  if(!db.inbox.length)return;
+  db.inbox=db.inbox.filter(x=>{
+    const p=parseSms(x.raw);
+    if(!p)return true;
+    const sameDay=dayKey(x.ts)===dayKey(rec.ts);
+    const sameAmt=Math.abs(p.amount-rec.amount)<0.01;
+    const sameAcc=!p.accId||p.accId===rec.accId;
+    const sameType=(p.type==='income')===(rec.type==='income');
+    return !(sameDay&&sameAmt&&sameAcc&&sameType);
+  });
+}
 
 /* ================= RENDER: ОПЕРАЦИИ ================= */
 function renderTxs(){
@@ -1458,6 +1478,7 @@ $('#fSave').addEventListener('click',()=>{
     if(pendingSms.inboxId)db.inbox=db.inbox.filter(x=>x.id!==pendingSms.inboxId);
     pendingSms=null;
   }
+  reconcileInboxWithTx(rec);
   save();closeSheets();rerender();
 });
 $('#fDel').addEventListener('click',()=>{
