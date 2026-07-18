@@ -228,6 +228,8 @@ textarea.f-in{min-height:80px;resize:vertical}
 /* CHARTS */
 .ccard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .ccard h3{font-size:17px;font-weight:800;margin-bottom:14px}
+.fc-row{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:7px 0;border-bottom:1px solid #F0F0F3}
+.fc-row:last-child{border-bottom:none}
 .ie-bars-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .ie-bars{display:flex;align-items:flex-end;gap:10px;height:170px;margin-bottom:4px}
 .ie-g{flex:1;min-width:54px;display:flex;flex-direction:column;align-items:center;height:100%}
@@ -251,6 +253,8 @@ textarea.f-in{min-height:80px;resize:vertical}
 .top-amt{font-size:15.5px;font-weight:800;color:var(--red);white-space:nowrap}
 .top-track{height:9px;background:#ECECEF;border-radius:4.5px;margin-top:7px;overflow:hidden}
 .top-fill{height:100%;background:var(--red);border-radius:4.5px;min-width:3px}
+.cat-breakdown{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}
+.subrow{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--ink2);padding:4px 0}
 
 /* MULTI-SELECT */
 #txList .row{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
@@ -285,6 +289,9 @@ textarea.f-in{min-height:80px;resize:vertical}
     </button>
     <button class="tab" data-sc="top" aria-label="Крупные расходы">
       <svg viewBox="0 0 24 24"><rect x="3.5" y="6" width="17" height="12" rx="2" transform="rotate(-8 12 12)"/><line x1="5" y1="11" x2="21" y2="8.8" transform="rotate(-8 12 12)"/></svg>
+    </button>
+    <button class="tab" data-sc="budget" aria-label="Бюджет">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="8"/><path d="M12 13.5 L15.5 10"/><path d="M12 3.8v1.6M4.4 8.2l1.4.8M19.6 8.2l-1.4.8"/></svg>
     </button>
   </div>
 </div></header>
@@ -359,7 +366,34 @@ textarea.f-in{min-height:80px;resize:vertical}
     </div>
     <div id="topList"></div>
   </section>
+
+  <!-- БЮДЖЕТ -->
+  <section class="sc" id="sc-budget">
+    <div class="bluepill">
+      <button class="nav" id="bPrev">‹</button>
+      <span class="mid" id="bTitle"></span>
+      <button class="nav" id="bNext">›</button>
+    </div>
+    <div class="ccard" id="budgetSummary" style="display:none"></div>
+    <div id="budgetList"></div>
+    <button class="btn btn-line" id="budgetAdd" style="margin:4px 0 20px">+ Добавить бюджет</button>
+  </section>
 </div>
+
+<!-- SHEET: БЮДЖЕТ -->
+<div class="sheet" id="budgetSheet"><div class="sheet-inner">
+  <div class="sheet-grip"></div>
+  <h2 id="budgetSheetTitle">Бюджет</h2>
+  <div class="f-label">Категория</div>
+  <select class="f-sel" id="bgCatSel"></select>
+  <div class="f-label">Сумма в месяц</div>
+  <input class="f-in" id="bgAmount" inputmode="decimal" placeholder="Например: 30000">
+  <div style="margin-top:16px">
+    <button class="btn btn-blue" id="bgSave">Сохранить</button>
+    <button class="btn btn-red" id="bgDel" style="display:none">Удалить бюджет</button>
+    <button class="btn btn-line" id="bgCancel">Отмена</button>
+  </div>
+</div></div>
 
 <!-- ПАНЕЛЬ ВЫДЕЛЕНИЯ -->
 <div class="selbar" id="selBar"><span id="selInfo"></span><button id="selClose" aria-label="Снять выделение">✕</button></div>
@@ -374,7 +408,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 21</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 22</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -710,6 +744,7 @@ function load(){
 }
 let db=load();
 if(!db.rems)db.rems=[];
+if(!db.budgets)db.budgets={};
 if(!db.inbox)db.inbox=[];
 if(!db.accV3){
   const a1=db.accounts.find(a=>a.name==='Кошелёк');
@@ -1186,6 +1221,7 @@ function monthAgg(y,m){
 }
 let chartPeriod=3;
 let chartEndDate=new Date();chartEndDate.setDate(1);
+let expandedChartCat=null;
 $('#chartPeriodSeg').addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   chartPeriod=+b.dataset.p;
@@ -1247,10 +1283,28 @@ function renderChart(){
     $('#topCatsWrap').innerHTML=topCats.map(([cid,sum])=>{
       const c=catOf(cid);
       const pct=totExp?Math.round(sum/totExp*100):0;
-      return '<div class="top-row" style="cursor:default"><div class="top-head"><span class="top-name">'+(c?c.icon+' '+esc(c.name):'Без категории')+'</span><span class="top-amt">'+fmt(sum)+'</span></div>'
+      const isOpen=expandedChartCat===cid;
+      let breakdown='';
+      if(isOpen){
+        const merchSums=new Map();
+        for(const t of db.txs){
+          if(t.type!=='expense'||t.catId!==cid||t.ts<rangeStart||t.ts>=rangeEnd)continue;
+          const key=t.merchant||'Без названия';
+          merchSums.set(key,(merchSums.get(key)||0)+t.amount);
+        }
+        breakdown='<div class="cat-breakdown">'+[...merchSums.entries()].sort((a,b)=>b[1]-a[1])
+          .map(([name,amt])=>'<div class="subrow"><span>'+esc(name)+'</span><span>'+fmt(amt)+'</span></div>').join('')+'</div>';
+      }
+      return '<div class="top-row cat-exp" data-cid="'+cid+'"><div class="top-head"><span class="top-name">'+(c?c.icon+' '+esc(c.name):'Без категории')+'</span><span class="top-amt">'+fmt(sum)+'</span></div>'
         +'<div class="top-track"><div class="top-fill" style="width:'+pct+'%"></div></div>'
-        +'<div class="small" style="margin-top:2px">'+pct+'% всех расходов за период</div></div>';
+        +'<div class="small" style="margin-top:2px">'+pct+'% всех расходов за период <span style="float:right">'+(isOpen?'▲ скрыть':'▼ что входит')+'</span></div>'
+        +breakdown+'</div>';
     }).join('');
+    $('#topCatsWrap').querySelectorAll('.cat-exp').forEach(el=>el.addEventListener('click',()=>{
+      const cid=el.dataset.cid;
+      expandedChartCat=expandedChartCat===cid?null:cid;
+      renderChart();
+    }));
     const [topCid,topSum]=topCats[0];
     const topC=catOf(topCid);
     const topPct=totExp?Math.round(topSum/totExp*100):0;
@@ -1292,6 +1346,75 @@ function renderChart(){
     +'<div class="small" style="text-align:right;margin-top:6px">Сейчас: <b style="color:var(--ink)">'+fmt(pts[pts.length-1].v)+'</b></div>';
 }
 
+/* ================= БЮДЖЕТ ================= */
+let budgetDate=new Date();budgetDate.setDate(1);
+let editBudgetCat=null;
+function renderBudget(){
+  const y=budgetDate.getFullYear(),m=budgetDate.getMonth();
+  $('#bTitle').textContent=MONTHS_NOM[m].toUpperCase()+' '+y;
+  const ids=Object.keys(db.budgets);
+  if(!ids.length){
+    $('#budgetSummary').style.display='none';
+    $('#budgetList').innerHTML='<div class="empty"><div class="big">🎯</div>Пока нет бюджетов.<br>Нажмите «+ Добавить бюджет», чтобы задать месячный лимит по категории.</div>';
+    return;
+  }
+  let totalBudget=0,totalSpent=0,overCount=0;
+  const rows=ids.map(cid=>{
+    const c=catOf(cid);
+    const budget=db.budgets[cid];
+    const spent=db.txs.filter(t=>t.type==='expense'&&t.catId===cid&&new Date(t.ts).getFullYear()===y&&new Date(t.ts).getMonth()===m)
+      .reduce((s,t)=>s+t.amount,0);
+    totalBudget+=budget;totalSpent+=spent;
+    const over=spent>budget;
+    if(over)overCount++;
+    const pct=budget?Math.round(spent/budget*100):0;
+    return {cid,c,budget,spent,over,pct};
+  }).sort((a,b)=>b.pct-a.pct);
+  $('#budgetSummary').style.display='';
+  $('#budgetSummary').innerHTML='<h3>Итого по бюджетам за месяц</h3>'
+    +'<div class="fc-row"><span>Заложено</span><b>'+fmt(totalBudget)+'</b></div>'
+    +'<div class="fc-row"><span>Потрачено</span><b class="'+(totalSpent>totalBudget?'a-exp':'')+'">'+fmt(totalSpent)+'</b></div>'
+    +(overCount
+      ?'<p class="small" style="color:var(--red);margin-top:8px">⚠️ Превышение по '+overCount+' '+plural(overCount,'категории','категориям','категориям')+' — смотрите список ниже.</p>'
+      :'<p class="small" style="color:var(--green);margin-top:8px">🎉 Вы укладываетесь в бюджет по всем категориям.</p>');
+  $('#budgetList').innerHTML=rows.map(r=>'<div class="row budget-row" data-cid="'+r.cid+'">'
+    +'<div class="cic exp">'+(r.c?r.c.icon:'📦')+'</div>'
+    +'<div class="rmid"><div class="rname">'+(r.c?esc(r.c.name):'—')+'</div>'
+    +'<div class="top-track" style="margin-top:6px"><div class="top-fill" style="width:'+Math.min(100,r.pct)+'%;background:'+(r.over?'var(--red)':'var(--blue)')+'"></div></div>'
+    +'<div class="small" style="margin-top:3px'+(r.over?';color:var(--red);font-weight:700':'')+'">'+fmt(r.spent)+' из '+fmt(r.budget)+' ('+r.pct+'%)'+(r.over?' — на '+fmt(r.spent-r.budget)+' больше плана':'')+'</div>'
+    +'</div></div>').join('');
+  $('#budgetList').querySelectorAll('.budget-row').forEach(el=>el.addEventListener('click',()=>openBudgetSheet(el.dataset.cid)));
+}
+$('#bPrev').addEventListener('click',()=>{budgetDate.setMonth(budgetDate.getMonth()-1);renderBudget();});
+$('#bNext').addEventListener('click',()=>{budgetDate.setMonth(budgetDate.getMonth()+1);renderBudget();});
+function openBudgetSheet(catId){
+  editBudgetCat=catId||null;
+  $('#budgetSheetTitle').textContent=catId?'Бюджет':'Новый бюджет';
+  const budgetedIds=new Set(Object.keys(db.budgets));
+  const avail=db.cats.filter(c=>c.type==='expense'&&(c.id===catId||!budgetedIds.has(c.id)));
+  $('#bgCatSel').innerHTML=avail.map(c=>'<option value="'+c.id+'">'+c.icon+' '+esc(c.name)+'</option>').join('');
+  if(catId)$('#bgCatSel').value=catId;
+  $('#bgCatSel').disabled=!!catId;
+  $('#bgAmount').value=catId&&db.budgets[catId]?String(db.budgets[catId]):'';
+  $('#bgDel').style.display=catId?'':'none';
+  document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
+  openSheet('#budgetSheet');
+}
+$('#budgetAdd').addEventListener('click',()=>openBudgetSheet(null));
+$('#bgCancel').addEventListener('click',closeSheets);
+$('#bgSave').addEventListener('click',()=>{
+  const catId=$('#bgCatSel').value;
+  const amt=parseFloat(String($('#bgAmount').value).replace(/\s/g,'').replace(',','.'))||0;
+  if(!catId||amt<=0){$('#bgAmount').focus();return;}
+  db.budgets[catId]=amt;
+  save();closeSheets();renderBudget();
+});
+$('#bgDel').addEventListener('click',()=>{
+  if(!editBudgetCat)return;
+  delete db.budgets[editBudgetCat];
+  save();closeSheets();renderBudget();
+});
+
 /* ================= КРУПНЫЕ РАСХОДЫ ================= */
 let topDate=new Date();topDate.setDate(1);
 function renderTop(){
@@ -1326,6 +1449,7 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
   if(curTab==='sum')renderSum();
   if(curTab==='chart')renderChart();
   if(curTab==='top')renderTop();
+  if(curTab==='budget')renderBudget();
 }));
 
 /* ================= SHEETS COMMON ================= */
