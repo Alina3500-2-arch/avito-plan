@@ -39,7 +39,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 
 /* BLUE PILL */
 .bluepill{display:flex;align-items:center;justify-content:space-between;background:var(--blue);color:#fff;border-radius:28px;padding:13px 22px;font-size:18px;font-weight:800;box-shadow:0 3px 8px rgba(30,136,229,.3);margin-bottom:6px}
-.totalAll{text-align:center;font-size:12.5px;color:var(--ink2);margin-bottom:14px}
+.totalAll{text-align:right;font-size:12.5px;color:var(--ink2);margin:-2px 22px 14px 0}
 .bluepill .nav{background:none;border:none;color:#fff;font-size:20px;font-weight:800;cursor:pointer;padding:0 4px}
 .bluepill .mid{flex:1;text-align:center;font-size:16px;letter-spacing:.02em}
 
@@ -56,7 +56,7 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .row{display:flex;gap:13px;align-items:flex-start;padding:13px 2px;cursor:pointer}
 .row:active{background:#F5F5F7}
 .cic{width:41px;height:41px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;color:#fff}
-.cic.exp{background:var(--red)}.cic.inc{background:var(--green)}.cic.tr{background:var(--ink3)}
+.cic.exp{background:#F7C6C2}.cic.inc{background:var(--green)}.cic.tr{background:var(--ink3)}
 .rmid{flex:1;min-width:0}
 .rname{font-size:16px;font-weight:700;line-height:1.3;display:flex;align-items:center;gap:6px}
 .rname .rep{color:var(--ink2);font-size:14px}
@@ -112,6 +112,8 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .f-amt{width:100%;border:1.5px solid var(--line);border-radius:12px;background:#fff;font-size:30px;font-weight:800;padding:10px 14px;text-align:center;color:var(--ink)}
 .f-in,.f-sel{width:100%;border:1.5px solid var(--line);border-radius:12px;background:#fff;font-size:16px;padding:11px 12px;color:var(--ink);font-family:inherit;-webkit-appearance:none;appearance:none}
 textarea.f-in{min-height:80px;resize:vertical}
+.sign-btn{width:44px;flex-shrink:0;border:1.5px solid var(--line);border-radius:12px;background:#fff;font-size:20px;font-weight:800;color:var(--green);cursor:pointer}
+.sign-btn.neg{color:var(--red)}
 .seg{display:flex;background:var(--pill);border-radius:12px;padding:3px;margin-bottom:4px}
 .seg button{flex:1;border:none;background:none;border-radius:10px;padding:9px 4px;font-size:14px;font-weight:700;color:var(--ink3);cursor:pointer}
 .seg button.on{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.12)}
@@ -346,7 +348,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 14</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 15</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -519,15 +521,23 @@ textarea.f-in{min-height:80px;resize:vertical}
   <div class="f-label">Название</div>
   <input class="f-in" id="aName" placeholder="Например: Кошелёк">
   <div class="row2">
-    <div><div class="f-label">Значок</div><select class="f-sel" id="aIcon">
-      <option>👛</option><option>💳</option><option>💵</option><option>🏦</option><option>🐷</option>
-    </select></div>
-    <div><div class="f-label">Начальный баланс</div><input class="f-in" id="aStart" inputmode="decimal" placeholder="0"></div>
+    <div><div class="f-label">Значок (эмодзи)</div><input class="f-in" id="aIcon" placeholder="💳" maxlength="4"></div>
+    <div><div class="f-label">Начальный баланс</div><div style="display:flex;gap:6px">
+      <button type="button" class="sign-btn" id="aSign">+</button>
+      <input class="f-in" id="aStart" inputmode="decimal" placeholder="0" style="flex:1">
+    </div></div>
   </div>
-  <div class="f-label">Последние 4 цифры карты (из СМС)</div>
-  <input class="f-in" id="aTail" inputmode="numeric" maxlength="4" placeholder="Чтобы СМС попадали на этот счёт">
-  <div class="f-label">Кредитный лимит (только для кредитки)</div>
-  <input class="f-in" id="aLimit" inputmode="decimal" placeholder="Например: 80000">
+  <label style="display:flex;align-items:center;gap:10px;font-size:15px;margin:10px 0;cursor:pointer">
+    <input type="checkbox" id="aIsDebt" style="width:20px;height:20px;accent-color:var(--blue)">Это счёт долгов (без лимита и привязки к карте)
+  </label>
+  <div id="aTailWrap">
+    <div class="f-label">Последние 4 цифры карты (из СМС)</div>
+    <input class="f-in" id="aTail" inputmode="numeric" maxlength="4" placeholder="Чтобы СМС попадали на этот счёт">
+  </div>
+  <div id="aLimitWrap">
+    <div class="f-label">Кредитный лимит (только для кредитки)</div>
+    <input class="f-in" id="aLimit" inputmode="decimal" placeholder="Например: 80000">
+  </div>
   <div style="margin-top:16px">
     <button class="btn btn-blue" id="aSave">Сохранить</button>
     <button class="btn btn-red" id="aDel" style="display:none">Удалить счёт</button>
@@ -683,7 +693,8 @@ if(!db.accV3){
   try{save();}catch(e){}
 }
 if(!db.accV4){
-  if(!db.accounts.some(a=>/долг/i.test(a.name)))db.accounts.push({id:'a4',name:'Долги',icon:'🤝',start:0,tail:''});
+  if(!db.accounts.some(a=>/долг/i.test(a.name)))db.accounts.push({id:'a4',name:'Долги',icon:'🤝',start:0,tail:'',isDebt:true});
+  else{const d=db.accounts.find(a=>/долг/i.test(a.name));if(d)d.isDebt=true;}
   db.accV4=true;
   try{save();}catch(e){}
 }
@@ -1655,15 +1666,30 @@ function renderAccList(){
   }).join('');
   $('#accList').querySelectorAll('.row').forEach(el=>el.addEventListener('click',()=>openAccSheet(db.accounts.find(a=>a.id===el.dataset.id))));
 }
+function accIsDebt(a){return !!(a&&(a.isDebt||/долг/i.test(a.name)));}
+function setAccSign(neg){
+  $('#aSign').textContent=neg?'−':'+';
+  $('#aSign').classList.toggle('neg',neg);
+}
+function setDebtFields(on){
+  $('#aTailWrap').style.display=on?'none':'';
+  $('#aLimitWrap').style.display=on?'none':'';
+}
+$('#aSign').addEventListener('click',()=>setAccSign($('#aSign').textContent==='+'));
+$('#aIsDebt').addEventListener('change',()=>setDebtFields($('#aIsDebt').checked));
 function openAccSheet(a){
   editAcc=a||null;
   $('#accSheetTitle').textContent=a?'Счёт':'Новый счёт';
   $('#aDel').style.display=a?'':'none';
   $('#aName').value=a?a.name:'';
   $('#aIcon').value=a?a.icon:'💳';
-  $('#aStart').value=a?String(a.start):'';
+  setAccSign(a?a.start<0:false);
+  $('#aStart').value=a?String(Math.abs(a.start)):'';
   $('#aTail').value=a?(a.tail||''):'';
   $('#aLimit').value=a&&a.limit?String(a.limit):'';
+  const isDebt=accIsDebt(a);
+  $('#aIsDebt').checked=isDebt;
+  setDebtFields(isDebt);
   document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
   openSheet('#accSheet');
 }
@@ -1673,12 +1699,15 @@ $('#aCancel').addEventListener('click',closeSheets);
 $('#aSave').addEventListener('click',()=>{
   const name=$('#aName').value.trim();
   if(!name){$('#aName').focus();return;}
+  const isDebt=$('#aIsDebt').checked;
+  const absStart=Math.abs(parseFloat(String($('#aStart').value).replace(/\s/g,'').replace(',','.'))||0);
   const rec={
     id:editAcc?editAcc.id:uid(),name,
-    icon:$('#aIcon').value,
-    start:parseFloat(String($('#aStart').value).replace(/\s/g,'').replace(',','.'))||0,
-    tail:$('#aTail').value.replace(/\D/g,'').slice(0,4),
-    limit:parseFloat(String($('#aLimit').value).replace(/\s/g,'').replace(',','.'))||0
+    icon:$('#aIcon').value.trim()||'💳',
+    start:$('#aSign').classList.contains('neg')?-absStart:absStart,
+    isDebt,
+    tail:isDebt?'':$('#aTail').value.replace(/\D/g,'').slice(0,4),
+    limit:isDebt?0:(parseFloat(String($('#aLimit').value).replace(/\s/g,'').replace(',','.'))||0)
   };
   if(editAcc){const i=db.accounts.findIndex(x=>x.id===editAcc.id);db.accounts[i]=rec;}
   else db.accounts.push(rec);
