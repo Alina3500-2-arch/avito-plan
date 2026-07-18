@@ -253,7 +253,12 @@ textarea.f-in{min-height:80px;resize:vertical}
 .top-amt{font-size:15.5px;font-weight:800;color:var(--red);white-space:nowrap}
 .top-track{height:9px;background:#ECECEF;border-radius:4.5px;margin-top:7px;overflow:hidden}
 .top-fill{height:100%;background:var(--red);border-radius:4.5px;min-width:3px}
-.cat-breakdown{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}
+.legend-row{padding:9px 2px;border-bottom:1px solid #EFEFF2;cursor:pointer}
+.legend-row:last-child{border-bottom:none}
+.legend-head{display:flex;align-items:center;gap:8px}
+.legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.legend-head .top-name{flex:1}
+.cat-breakdown{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);margin-left:20px}
 .subrow{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--ink2);padding:4px 0}
 
 /* MULTI-SELECT */
@@ -344,7 +349,8 @@ textarea.f-in{min-height:80px;resize:vertical}
       <div id="incWrap" class="small"></div>
     </div>
     <div class="ccard">
-      <h3>Топ категорий расходов</h3>
+      <h3>Категории расходов</h3>
+      <div id="donutWrap"></div>
       <div id="topCatsWrap"></div>
     </div>
     <div class="ccard" id="adviceCard" style="display:none">
@@ -408,7 +414,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 22</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 23</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -1275,12 +1281,26 @@ function renderChart(){
     if(t.type!=='expense'||t.ts<rangeStart||t.ts>=rangeEnd)continue;
     catSums.set(t.catId,(catSums.get(t.catId)||0)+t.amount);
   }
-  const topCats=[...catSums.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topCats=[...catSums.entries()].sort((a,b)=>b[1]-a[1]);
   if(!topCats.length){
+    $('#donutWrap').innerHTML='';
     $('#topCatsWrap').innerHTML='<p class="small">За этот период расходов не было.</p>';
     $('#adviceCard').style.display='none';
   }else{
-    $('#topCatsWrap').innerHTML=topCats.map(([cid,sum])=>{
+    const colors=['#8E44AD','#E53935','#F57C00','#43A047','#1E88E5','#16A085','#D35400','#5D4037','#7F8C8D','#C2185B','#3949AB','#00838F'];
+    const R=64,CX=90,CY=90,SW=30,CIRC=2*Math.PI*R;
+    let dashOffset=0,arcs='';
+    topCats.forEach(([cid,sum],i)=>{
+      const frac=sum/totExp;
+      const len=Math.max(frac*CIRC-1,0);
+      arcs+='<circle cx="'+CX+'" cy="'+CY+'" r="'+R+'" fill="none" stroke="'+colors[i%colors.length]+'" stroke-width="'+SW+'" '
+        +'stroke-dasharray="'+len+' '+(CIRC-len)+'" stroke-dashoffset="'+(-dashOffset)+'" transform="rotate(-90 '+CX+' '+CY+')"/>';
+      dashOffset+=frac*CIRC;
+    });
+    $('#donutWrap').innerHTML='<svg viewBox="0 0 180 180" width="180" height="180" style="display:block;margin:0 auto">'+arcs
+      +'<text x="90" y="84" text-anchor="middle" font-size="12" fill="var(--ink2)">Расход</text>'
+      +'<text x="90" y="104" text-anchor="middle" font-size="16" font-weight="800" fill="var(--ink)">'+fmt0.format(totExp)+' ₽</text></svg>';
+    $('#topCatsWrap').innerHTML=topCats.map(([cid,sum],i)=>{
       const c=catOf(cid);
       const pct=totExp?Math.round(sum/totExp*100):0;
       const isOpen=expandedChartCat===cid;
@@ -1295,9 +1315,11 @@ function renderChart(){
         breakdown='<div class="cat-breakdown">'+[...merchSums.entries()].sort((a,b)=>b[1]-a[1])
           .map(([name,amt])=>'<div class="subrow"><span>'+esc(name)+'</span><span>'+fmt(amt)+'</span></div>').join('')+'</div>';
       }
-      return '<div class="top-row cat-exp" data-cid="'+cid+'"><div class="top-head"><span class="top-name">'+(c?c.icon+' '+esc(c.name):'Без категории')+'</span><span class="top-amt">'+fmt(sum)+'</span></div>'
-        +'<div class="top-track"><div class="top-fill" style="width:'+pct+'%"></div></div>'
-        +'<div class="small" style="margin-top:2px">'+pct+'% всех расходов за период <span style="float:right">'+(isOpen?'▲ скрыть':'▼ что входит')+'</span></div>'
+      return '<div class="legend-row cat-exp" data-cid="'+cid+'"><div class="legend-head">'
+        +'<span class="legend-dot" style="background:'+colors[i%colors.length]+'"></span>'
+        +'<span class="top-name">'+(c?c.icon+' '+esc(c.name):'Без категории')+'</span>'
+        +'<span class="top-amt">'+fmt(sum)+'</span></div>'
+        +'<div class="small" style="margin-top:2px;padding-left:20px">'+pct+'% всех расходов за период <span style="float:right">'+(isOpen?'▲ скрыть':'▼ что входит')+'</span></div>'
         +breakdown+'</div>';
     }).join('');
     $('#topCatsWrap').querySelectorAll('.cat-exp').forEach(el=>el.addEventListener('click',()=>{
