@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#FFFFFF">
 <title>Мои деньги</title>
 <style>
@@ -11,7 +11,7 @@
   --blue:#1E88E5;--blue-d:#1565C0;--red:#E53935;--green:#43A047;--orange:#F57C00;
   --ink:#1C1C1E;--ink2:#6B6B70;--ink3:#9A9AA0;--line:#E8E8EC;--pill:#EFEFF2;--bg:#FFFFFF;
 }
-html{color-scheme:light}
+html{color-scheme:light;touch-action:manipulation}
 body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
 button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .page{max-width:560px;margin:0 auto;padding:0 14px 110px}
@@ -251,6 +251,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 .selbar{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:75;background:var(--ink);color:#fff;border-radius:14px;padding:13px 18px;display:none;align-items:center;justify-content:space-between;font-weight:700;font-size:15.5px;box-shadow:0 6px 18px rgba(0,0,0,.3)}
 .selbar.on{display:flex}
 .selbar button{background:none;border:none;color:#fff;font-size:19px;cursor:pointer;padding:0 0 0 14px}
+.copy-btn{background:var(--blue);color:#fff;border:none;border-radius:17px;padding:8px 14px;font-size:14px;font-weight:700;cursor:pointer}
 </style>
 </head>
 <body>
@@ -259,7 +260,7 @@ textarea.f-in{min-height:80px;resize:vertical}
   <div class="bar-row">
     <button class="burger" id="burger" aria-label="Меню"><span></span><span></span><span></span><span class="bdot" id="ibDot"></span></button>
     <div class="bar-title" id="barTitle"></div>
-    <div style="width:34px"></div>
+    <button class="copy-btn" id="selCopy" style="display:none">📋 Копировать</button>
   </div>
   <div class="tabs">
     <button class="tab on" data-sc="tx" aria-label="Операции">
@@ -342,7 +343,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 11</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 12</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -873,7 +874,7 @@ function renderTxs(){
 /* ================= ВЫДЕЛЕНИЕ С СУММОЙ ================= */
 let selMode=false,lpFired=false;
 const selIds=new Set();
-function selReset(){selMode=false;selIds.clear();$('#selBar').classList.remove('on');}
+function selReset(){selMode=false;selIds.clear();$('#selBar').classList.remove('on');$('#selCopy').style.display='none';}
 function toggleSel(el){
   const id=el.dataset.id;
   if(selIds.has(id)){selIds.delete(id);el.classList.remove('sel');}
@@ -886,10 +887,30 @@ function toggleSel(el){
   }
   $('#selInfo').textContent='Выбрано: '+selIds.size+' · '+(sum>0?'+':'')+fmt(sum);
   $('#selBar').classList.add('on');
+  $('#selCopy').style.display='';
 }
 $('#selClose').addEventListener('click',()=>{
   document.querySelectorAll('#txList .row.sel').forEach(e=>e.classList.remove('sel'));
   selReset();
+});
+$('#selCopy').addEventListener('click',()=>{
+  if(!selIds.size)return;
+  calOpen(dayKey(Date.now()),k=>{
+    const [y,m,d]=k.split('-').map(Number);
+    let n=0;
+    for(const id of selIds){
+      const t=db.txs.find(x=>x.id===id);
+      if(!t)continue;
+      const t0=new Date(t.ts);
+      db.txs.push({...t,id:uid(),ts:new Date(y,m-1,d,t0.getHours(),t0.getMinutes()).getTime()});
+      n++;
+    }
+    save();
+    document.querySelectorAll('#txList .row.sel').forEach(e=>e.classList.remove('sel'));
+    selReset();
+    rerender();
+    alert('Скопировала '+n+' '+plural(n,'операцию','операции','операций')+' на '+dateLine(k));
+  });
 });
 
 /* ================= RENDER: НАПОМИНАНИЯ ================= */
@@ -1274,14 +1295,43 @@ function fillCatSelect(sel,type,selected){
 }
 
 /* ================= ОПЕРАЦИЯ: ПОЛНОЭКРАННАЯ ФОРМА ================= */
-let editTx=null,sheetType='expense',sheetCat=null,pendingSms=null;
+let editTx=null,sheetType='expense',sheetCat=null,pendingSms=null,catTouched=false;
 let fAmtVal='',fDateKey=dayKey(Date.now());
 function updAmt(){
   const n=parseFloat(String(fAmtVal).replace(',','.'));
   $('#fAmtBtn').textContent=n?fmtN.format(n):'0,00';
 }
 function updDateBtn(){$('#fDateBtn').textContent=dateLine(fDateKey);}
-$('#fCatSel').addEventListener('change',()=>{sheetCat=$('#fCatSel').value||null;});
+$('#fCatSel').addEventListener('change',()=>{sheetCat=$('#fCatSel').value||null;catTouched=true;});
+// умный подбор категории по словам названия: точное совпадение с памятью магазинов,
+// потом по общим словам, потом по подсказкам-регэкспам
+function guessCatFromText(text){
+  const n=normMerchant(text);
+  if(!n)return null;
+  if(db.merchantMap[n]&&catOf(db.merchantMap[n]))return db.merchantMap[n];
+  const words=n.split(' ').filter(w=>w.length>=3);
+  let best=null,bestScore=0;
+  for(const k in db.merchantMap){
+    if(!catOf(db.merchantMap[k]))continue;
+    const kw=k.split(' ');
+    let s=0;
+    for(const w of words)if(kw.includes(w))s++;
+    if(s>bestScore){bestScore=s;best=db.merchantMap[k];}
+  }
+  if(best)return best;
+  for(const [re,id] of CAT_HINTS){if(re.test(text))return id;}
+  return null;
+}
+$('#fMerchant').addEventListener('input',()=>{
+  if(catTouched||sheetType==='transfer')return;
+  const type=sheetType==='income'?'income':'expense';
+  const g=guessCatFromText($('#fMerchant').value);
+  if(g&&catOf(g)&&catOf(g).type===type){sheetCat=g;$('#fCatSel').value=g;}
+  else{
+    const def=type==='expense'?'prochie':'prochie_in';
+    if(db.cats.some(c=>c.id===def)){sheetCat=def;$('#fCatSel').value=def;}
+  }
+});
 function renderCatChips(){
   $('#catRow').style.display=sheetType==='transfer'?'none':'';
   $('#accToRow').style.display=sheetType==='transfer'?'':'none';
@@ -1292,6 +1342,10 @@ function renderCatChips(){
   if(sheetType==='transfer')return;
   const type=sheetType==='income'?'income':'expense';
   if(sheetCat&&!db.cats.some(c=>c.id===sheetCat&&c.type===type))sheetCat=null;
+  if(!sheetCat){
+    const def=type==='expense'?'prochie':'prochie_in';
+    if(db.cats.some(c=>c.id===def))sheetCat=def;
+  }
   fillCatSelect($('#fCatSel'),type,sheetCat);
 }
 $('#typeSeg').addEventListener('click',e=>{
@@ -1324,6 +1378,7 @@ function openTxSheet(tx,smsData){
   const src=tx||smsData||{};
   setType(src.type||'expense');
   sheetCat=src.catId||null;
+  catTouched=!!src.catId;
   fAmtVal=src.amount?String(src.amount).replace('.',','):'';
   updAmt();
   $('#fMerchant').value=src.merchant||'';
