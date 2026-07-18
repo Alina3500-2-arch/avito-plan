@@ -317,7 +317,8 @@ textarea.f-in{min-height:80px;resize:vertical}
   <!-- ДИАГРАММЫ -->
   <section class="sc" id="sc-chart">
     <div class="seg" id="chartPeriodSeg">
-      <button data-p="3" class="on">Месяцы</button>
+      <button data-p="1">Месяц</button>
+      <button data-p="3" class="on">3 месяца</button>
       <button data-p="6">Полгода</button>
       <button data-p="12">Год</button>
     </div>
@@ -325,6 +326,10 @@ textarea.f-in{min-height:80px;resize:vertical}
       <h3>Доходы и расходы</h3>
       <div class="ie-bars-wrap"><div class="ie-bars" id="ieBars"></div></div>
       <div id="ieTable"></div>
+    </div>
+    <div class="ccard">
+      <h3>Доходы</h3>
+      <div id="incWrap" class="small"></div>
     </div>
     <div class="ccard">
       <h3>Топ категорий расходов</h3>
@@ -364,7 +369,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 17</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 18</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -1171,11 +1176,26 @@ function renderChart(){
     +'<div class="ie-bar exp" style="height:'+Math.max(1,x.exp/max*100)+'%"></div>'
     +'</div><div class="ie-lbl">'+(chartPeriod>3?MONTHS_GEN[x.m].slice(0,3)+'. '+String(x.y).slice(2):MONTHS_GEN[x.m]+' '+x.y+' г.')+'</div></div>').join('');
   const totInc=months.reduce((s,x)=>s+x.inc,0),totExp=months.reduce((s,x)=>s+x.exp,0);
-  const periodLbl=chartPeriod===3?'Последние 3 месяца':chartPeriod===6?'Последние полгода':'Последний год';
+  const periodLbl=chartPeriod===1?'Последний месяц':chartPeriod===3?'Последние 3 месяца':chartPeriod===6?'Последние полгода':'Последний год';
   $('#ieTable').innerHTML='<table class="ie-tbl"><tr><th>Тип</th><th>'+periodLbl+'</th></tr>'
    +'<tr><td><span class="dot" style="background:var(--green)"></span>Доход</td><td>'+fmt(totInc)+'</td></tr>'
    +'<tr><td><span class="dot" style="background:var(--red)"></span>Расход</td><td>−'+fmt(totExp)+'</td></tr>'
    +'<tr class="tot"><td>Чистая прибыль</td><td>'+fmt(totInc-totExp)+'</td></tr></table>';
+  const prevMonths=[];
+  for(let i=chartPeriod*2-1;i>=chartPeriod;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    prevMonths.push(monthAgg(d.getFullYear(),d.getMonth()));
+  }
+  const prevInc=prevMonths.reduce((s,x)=>s+x.inc,0);
+  const diff=totInc-prevInc;
+  let incLine;
+  if(!prevInc&&!totInc)incLine='Доходов пока не было записано.';
+  else if(!prevInc)incLine='Заработала '+fmt(totInc)+' — за предыдущий период доходов не было.';
+  else{
+    const pct=Math.round(Math.abs(diff)/prevInc*100);
+    incLine='Заработала '+fmt(totInc)+' — '+(diff>=0?'больше':'меньше')+' на '+fmt(Math.abs(diff))+' ('+pct+'%), чем за предыдущий такой же период ('+fmt(prevInc)+').';
+  }
+  $('#incWrap').textContent=incLine;
   const rangeStart=new Date(now.getFullYear(),now.getMonth()-(chartPeriod-1),1).getTime();
   const catSums=new Map();
   for(const t of db.txs){
@@ -1259,6 +1279,7 @@ $('#tNext').addEventListener('click',()=>{topDate.setMonth(topDate.getMonth()+1)
 /* ================= TABS + FAB ================= */
 let curTab='tx';
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+  if(!document.querySelector('.sheet.on,.fs.on,#drawer.on'))unlockBody();
   curTab=b.dataset.sc;
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
   document.querySelectorAll('.sc').forEach(s=>s.classList.toggle('on',s.id==='sc-'+curTab));
@@ -1296,7 +1317,7 @@ function closeSheets(){
 $('#ovl').addEventListener('click',closeSheets);
 
 /* ================= DRAWER ================= */
-$('#burger').addEventListener('click',()=>{$('#ovl').classList.add('on');$('#drawer').classList.add('on');});
+$('#burger').addEventListener('click',()=>{$('#ovl').classList.add('on');$('#drawer').classList.add('on');lockBody();});
 document.querySelectorAll('.dr-item').forEach(b=>b.addEventListener('click',()=>{
   const act=b.dataset.act;
   $('#drawer').classList.remove('on');
