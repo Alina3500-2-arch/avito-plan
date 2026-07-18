@@ -58,6 +58,7 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         view.addSubview(webView)
         view.backgroundColor = .white
         webView.load(URLRequest(url: appURL))
+        ensureInboxFile()
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
         NotificationCenter.default.addObserver(self, selector: #selector(onForeground),
                                                name: UIApplication.willEnterForegroundNotification, object: nil)
@@ -67,16 +68,28 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         drainInbox()
     }
 
+    var inboxURL: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("inbox.txt")
+    }
+
+    // файл-копилка должен существовать всегда: автоматизация Команд дописывает в него СМС,
+    // и её закладка на файл сломается, если файл удалить — поэтому только очищаем
+    func ensureInboxFile() {
+        if !FileManager.default.fileExists(atPath: inboxURL.path) {
+            try? "".write(to: inboxURL, atomically: true, encoding: .utf8)
+        }
+    }
+
     // забирает СМС, дописанные автоматизацией в Файлы («На iPhone/Мои деньги/inbox.txt»),
     // пока приложение было закрыто/телефон заблокирован
     func drainInbox() {
-        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("inbox.txt")
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return }
-        try? FileManager.default.removeItem(at: url)
+        ensureInboxFile()
+        guard let text = try? String(contentsOf: inboxURL, encoding: .utf8) else { return }
         let lines = text.split(whereSeparator: \.isNewline).map(String.init)
             .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         guard !lines.isEmpty else { return }
+        try? "".write(to: inboxURL, atomically: true, encoding: .utf8)
         let json = (try? JSONSerialization.data(withJSONObject: lines))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"
         runJS("importInboxTexts(" + json + ")")
