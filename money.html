@@ -343,7 +343,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 13</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">учёт как в Bluecoins · версия 14</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -697,7 +697,7 @@ const IN_APP=/MoiDengiApp/.test(navigator.userAgent);
 function syncNativeReminders(){
   try{
     if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.reminders){
-      window.webkit.messageHandlers.reminders.postMessage((db.rems||[]).map(r=>({
+      window.webkit.messageHandlers.reminders.postMessage((db.rems||[]).filter(r=>r.type!=='income').map(r=>({
         id:r.id,name:r.name,amount:r.amount,due:r.due,time:r.time||'09:00',
         repeat:r.repeat||'none',dayBefore:r.dayBefore!==false
       })));
@@ -921,7 +921,7 @@ function remDiff(r){
 function renderRems(){
   const box=$('#remList');
   const rems=[...db.rems].sort((a,b)=>a.due<b.due?-1:1);
-  const due=rems.filter(r=>remDiff(r)<=1);
+  const due=rems.filter(r=>r.type!=='income'&&remDiff(r)<=1);
   $('#remDot').classList.toggle('on',due.length>0);
   $('#dueBanner').innerHTML=due.length
     ?'<div class="due-banner">🔔 '+(due.length===1?'Скоро платёж: '+esc(due[0].name):'Скоро платежей: '+due.length)+'. Проверьте список ниже.</div>':'';
@@ -1553,7 +1553,7 @@ $('#rPaidFab').addEventListener('click',payFromForm);
 
 /* ================= ОКОШКО «ПОРА ОПЛАТИТЬ» ================= */
 function renderDueList(focusId){
-  const due=db.rems.filter(r=>remDiff(r)<=0||r.id===focusId).sort((a,b)=>a.due<b.due?-1:1);
+  const due=db.rems.filter(r=>(r.type!=='income'&&remDiff(r)<=0)||r.id===focusId).sort((a,b)=>a.due<b.due?-1:1);
   if(!due.length){$('#dueList').innerHTML='<p class="small" style="padding:8px 0">Все платежи отмечены 🎉</p>';return;}
   $('#dueList').innerHTML=due.map(r=>{
     const c=catOf(r.catId);
@@ -1569,7 +1569,7 @@ function renderDueList(focusId){
   }));
 }
 function openDueSheet(focusId){
-  if(!db.rems.some(r=>remDiff(r)<=0||r.id===focusId))return false;
+  if(!db.rems.some(r=>(r.type!=='income'&&remDiff(r)<=0)||r.id===focusId))return false;
   renderDueList(focusId);
   openSheet('#dueSheet');
   return true;
@@ -1872,7 +1872,7 @@ syncNativeReminders();
   }
   if(db.inbox.length){openInboxSheet();return;}
   const today=dayKey(Date.now());
-  if(db.rems.some(r=>remDiff(r)<=0)&&localStorage.getItem('bcDuePrompt')!==today){
+  if(db.rems.some(r=>r.type!=='income'&&remDiff(r)<=0)&&localStorage.getItem('bcDuePrompt')!==today){
     localStorage.setItem('bcDuePrompt',today);
     openDueSheet();
   }
