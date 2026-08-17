@@ -155,6 +155,13 @@ textarea.f-in{min-height:80px;resize:vertical}
 /* MODALS (calculator, calendar) */
 .modal-ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:120;display:none;align-items:center;justify-content:center;padding:20px}
 .modal-ovl.on{display:flex}
+.askm{width:100%;max-width:330px;border-radius:12px;background:#fff;box-shadow:0 10px 40px rgba(0,0,0,.4);overflow:hidden}
+.askm h3{font-size:18px;padding:18px 20px 6px;margin:0}
+.askm p{font-size:14px;color:#8E8E93;padding:0 20px 12px;margin:0}
+.askm button{display:block;width:100%;border:none;background:none;text-align:left;padding:15px 20px;font-size:16px;color:var(--ink);border-top:1px solid var(--line);cursor:pointer}
+.askm button:active{background:var(--pill)}
+.askm button.dngr{color:#E53935}
+.askm button.cncl{color:#8E8E93;text-align:center}
 .calcm{width:100%;max-width:330px;border-radius:8px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.4)}
 .calcm-disp{background:#fff;padding:16px 16px 8px;text-align:right}
 .calcm-exp{font-size:14px;color:#8E8E93;min-height:18px;font-variant-numeric:tabular-nums}
@@ -412,7 +419,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 25</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 26</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -424,7 +431,9 @@ textarea.f-in{min-height:80px;resize:vertical}
   <button class="dr-item" data-act="csv"><span class="ic">📄</span>Экспорт в CSV</button>
   <button class="dr-item" data-act="backup"><span class="ic">💾</span>Резервная копия</button>
   <button class="dr-item" data-act="restore"><span class="ic">📥</span>Восстановить из копии</button>
+  <button class="dr-item" data-act="restrem"><span class="ic">⏰</span>Восстановить напоминания</button>
   <input type="file" id="impFile" accept=".json" style="display:none">
+  <input type="file" id="impRemFile" accept=".json" style="display:none">
 </nav>
 
 <!-- SHEET: ПОРЯДОК ВКЛАДОК -->
@@ -484,6 +493,17 @@ textarea.f-in{min-height:80px;resize:vertical}
     <button data-t="expense" class="on">РАСХОД</button>
     <button data-t="income">ДОХОД</button>
     <button data-t="transfer">ПЕРЕВОД</button>
+  </div>
+</div>
+
+<!-- ВОПРОС «УДАЛИТЬ ОДНО ИЛИ ВСЕ» -->
+<div class="modal-ovl" id="askOvl">
+  <div class="askm">
+    <h3 id="askTitle">Удалить напоминание?</h3>
+    <p id="askText"></p>
+    <button id="askOne">Только это напоминание</button>
+    <button id="askAll" class="dngr">Все повторы (удалить совсем)</button>
+    <button id="askCancel" class="cncl">Отмена</button>
   </div>
 </div>
 
@@ -571,7 +591,6 @@ textarea.f-in{min-height:80px;resize:vertical}
       <button class="btn btn-line" id="rIcs">🔔 В Календарь</button>
     </div>
   </div>
-  <button class="fab-mini" id="rPaidFab" style="display:none" title="Записать оплату" aria-label="Записать оплату">🧾</button>
   <button class="fab-save" id="rSave" aria-label="Сохранить">✓</button>
   <div class="fs-bottom" id="rTypeSeg">
     <button data-t="expense" class="on">РАСХОД</button>
@@ -1521,6 +1540,7 @@ document.querySelectorAll('.dr-item').forEach(b=>b.addEventListener('click',()=>
   else if(act==='csv'){closeSheets();exportCsv();}
   else if(act==='backup'){closeSheets();download('money-backup-'+dayKey(Date.now())+'.json',JSON.stringify(db,null,1),'application/json');}
   else if(act==='restore'){closeSheets();$('#impFile').click();}
+  else if(act==='restrem'){closeSheets();$('#impRemFile').click();}
   else if(act==='taborder'){renderTabOrderList();openSheet('#tabOrderSheet');}
 }));
 
@@ -1830,7 +1850,6 @@ function openRemSheet(r){
   $('#remSheetTitle').textContent=r?'Напоминание':'Новое напоминание';
   $('#rDel').style.display=r?'':'none';
   $('#rPaid').style.display=r?'':'none';
-  $('#rPaidFab').style.display=r?'':'none';
   remType=r?r.type:'expense';
   $('#rTypeSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.t===remType));
   remCat=r?r.catId:null;
@@ -1875,10 +1894,36 @@ $('#rSave').addEventListener('click',()=>{
   else db.rems.push(rec);
   save();closeSheets();rerender();
 });
-$('#rDel').addEventListener('click',()=>{
-  if(!editRem||!confirm('Удалить напоминание?'))return;
-  db.rems=db.rems.filter(x=>x.id!==editRem.id);
+function delRemAll(r){
+  db.rems=db.rems.filter(x=>x.id!==r.id);
   save();closeSheets();rerender();
+}
+/* «только это» — не удаляем совсем, а переносим на следующий раз */
+function delRemOne(r){
+  const nd=nextDue(r);
+  if(nd){
+    const i=db.rems.findIndex(x=>x.id===r.id);
+    if(i>=0)db.rems[i]={...db.rems[i],due:nd};
+    save();closeSheets();rerender();
+    alert('Пропустила этот раз. Следующее напоминание: '+dateLine(nd));
+  }else delRemAll(r);
+}
+function closeAsk(){$('#askOvl').classList.remove('on');}
+$('#askCancel').addEventListener('click',closeAsk);
+$('#askOvl').addEventListener('click',e=>{if(e.target===$('#askOvl'))closeAsk();});
+$('#rDel').addEventListener('click',()=>{
+  if(!editRem)return;
+  const r=editRem;
+  if(r.repeat==='none'||!nextDue(r)){
+    if(!confirm('Удалить напоминание?'))return;
+    delRemAll(r);return;
+  }
+  $('#askText').textContent='«'+r.name+'» повторяется. Удалить только этот раз или все повторы?';
+  const one=$('#askOne'),all=$('#askAll');
+  one.textContent='Только этот раз (перенести на '+dateLine(nextDue(r))+')';
+  one.onclick=()=>{closeAsk();delRemOne(r);};
+  all.onclick=()=>{closeAsk();delRemAll(r);};
+  $('#askOvl').classList.add('on');
 });
 function nextDue(r){
   const d=keyToDate(r.due);
@@ -1910,7 +1955,6 @@ function payFromForm(){
   alert('Записала операцию «'+rec.name+'»'+(nd?'. Следующее напоминание: '+dateLine(nd):''));
 }
 $('#rPaid').addEventListener('click',payFromForm);
-$('#rPaidFab').addEventListener('click',payFromForm);
 
 /* ================= ОКОШКО «ПОРА ОПЛАТИТЬ» ================= */
 function renderDueList(focusId){
@@ -2238,6 +2282,29 @@ $('#impFile').addEventListener('change',e=>{
       if(!d.rems)d.rems=[];
       db=d;save();rerender();alert('Восстановлено: операций — '+db.txs.length);
     }catch(err){alert('Файл не похож на резервную копию.');}
+  };
+  r.readAsText(f);
+  e.target.value='';
+});
+
+/* добавляет напоминания из файла копии, ничего больше не трогая */
+$('#impRemFile').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      const list=Array.isArray(d.rems)?d.rems:null;
+      if(!list)throw 0;
+      let add=0;
+      list.forEach(x=>{
+        if(!x||!x.id||!x.name)return;
+        if(db.rems.some(y=>y.id===x.id))return;
+        db.rems.push(x);add++;
+      });
+      save();rerender();
+      alert(add?('Добавила напоминаний: '+add):'Все напоминания из файла уже есть.');
+    }catch(err){alert('В этом файле нет напоминаний.');}
   };
   r.readAsText(f);
   e.target.value='';
