@@ -57,14 +57,29 @@ class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDele
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         view.addSubview(webView)
         view.backgroundColor = .white
-        webView.load(URLRequest(url: appURL))
+        loadFresh()
         ensureInboxFile()
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
         NotificationCenter.default.addObserver(self, selector: #selector(onForeground),
                                                name: UIApplication.willEnterForegroundNotification, object: nil)
     }
 
+    /// Грузим страницу мимо кэша, иначе WKWebView может месяцами держать старую версию.
+    func loadFresh() {
+        var comps = URLComponents(url: appURL, resolvingAgainstBaseURL: false)!
+        comps.queryItems = [URLQueryItem(name: "v", value: String(Int(Date().timeIntervalSince1970)))]
+        var req = URLRequest(url: comps.url ?? appURL)
+        req.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
+        lastLoad = Date()
+        webView.load(req)
+    }
+    var lastLoad = Date.distantPast
+
     @objc func onForeground() {
+        // если приложение долго висело в фоне — перезагружаем, чтобы подтянуть свежую версию
+        if Date().timeIntervalSince(lastLoad) > 1800 {
+            loadFresh()
+        }
         drainInbox()
     }
 

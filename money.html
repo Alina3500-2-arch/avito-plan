@@ -419,7 +419,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 26</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 27</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -1122,7 +1122,7 @@ function renderRems(){
         +(r.note?'<div class="rnote">'+esc(r.note)+'</div>':'')
         +'</div>'
         +'<div class="rright"><div class="ramt '+aCls+'">'+sign+fmt(r.amount)+' <span style="font-weight:400">⏰</span></div>'
-        +'<div class="rbal">'+esc(accOf(r.accId)?.name||'')+' | '+fmt(runMap[r.id])+'</div></div>'
+        +'<div class="rbal">'+esc(accOf(r.accId)?.name||'')+' после: '+fmt(runMap[r.id])+'</div></div>'
         +'</div></div>';
     }
   }
