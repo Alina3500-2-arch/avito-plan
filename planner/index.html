@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<title>Планер на неделю</title>
+<meta name="theme-color" content="#6b5cff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Планер">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiB2aWV3Qm94PSIwIDAgMTgwIDE4MCI+PHJlY3Qgd2lkdGg9IjE4MCIgaGVpZ2h0PSIxODAiIHJ4PSI0MCIgZmlsbD0iIzZiNWNmZiIvPjx0ZXh0IHg9IjkwIiB5PSIxMjAiIGZvbnQtc2l6ZT0iMTAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmZmIj7wn5OFPC90ZXh0Pjwvc3ZnPg==">
+<style>
+  :root{
+    --bg:#f4f4f8; --card:#ffffff; --text:#1c1c28; --muted:#8a8a9a;
+    --accent:#6b5cff; --accent-soft:#efedff; --line:#ececf2; --done:#a0a0b0;
+    --shadow:0 6px 20px rgba(30,30,60,.08); --green:#22b07d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f0f16; --card:#1a1a24; --text:#f0f0f5; --muted:#8a8a9a;
+      --accent:#8577ff; --accent-soft:#252140; --line:#26263340; --done:#5a5a6a;
+      --shadow:0 6px 20px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--text);
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+    min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  header{
+    padding:18px 18px 8px; position:sticky; top:0; z-index:5;
+    background:linear-gradient(var(--bg) 70%, transparent);
+    backdrop-filter:saturate(180%) blur(8px);
+  }
+  h1{font-size:26px; margin:0 0 2px; letter-spacing:-.5px;}
+  .sub{color:var(--muted); font-size:13px;}
+  .wrap{padding:0 18px 160px; max-width:640px; margin:0 auto;}
+  .week{margin-top:22px;}
+  .week-head{display:flex; align-items:baseline; gap:8px; margin:0 4px 10px;}
+  .week-title{font-size:17px; font-weight:700;}
+  .week-range{color:var(--muted); font-size:12px;}
+  .week-count{margin-left:auto; color:var(--muted); font-size:12px;}
+  .day{margin-bottom:4px;}
+  .day-label{
+    font-size:12px; font-weight:600; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.5px; margin:12px 4px 6px;
+    display:flex; align-items:center; gap:6px;
+  }
+  .day-label.today{color:var(--accent);}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;}
+  .task{
+    background:var(--card); border-radius:14px; padding:13px 14px; margin-bottom:8px;
+    display:flex; align-items:flex-start; gap:12px; box-shadow:var(--shadow);
+    animation:pop .2s ease;
+  }
+  @keyframes pop{from{transform:scale(.97);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .check{
+    width:24px;height:24px;border-radius:8px;border:2px solid var(--line);
+    flex:0 0 auto; margin-top:1px; display:flex;align-items:center;justify-content:center;
+    cursor:pointer; transition:.15s; font-size:14px; color:#fff;
+  }
+  .check.on{background:var(--green);border-color:var(--green);}
+  .task-text{flex:1; font-size:16px; line-height:1.35; word-break:break-word;}
+  .task.done .task-text{color:var(--done); text-decoration:line-through;}
+  .del{color:var(--muted); font-size:20px; padding:0 4px; cursor:pointer; opacity:.5;}
+  .empty{color:var(--muted); font-size:14px; text-align:center; padding:40px 20px; line-height:1.5;}
+  .empty .big{font-size:34px; display:block; margin-bottom:8px;}
+
+  /* composer */
+  .composer{
+    position:fixed; left:0; right:0; bottom:0; z-index:20;
+    padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+    background:linear-gradient(transparent, var(--bg) 30%);
+  }
+  .bar{
+    display:flex; align-items:center; gap:8px; background:var(--card);
+    border-radius:18px; padding:8px 8px 8px 14px; box-shadow:var(--shadow);
+    border:1px solid var(--line);
+  }
+  .bar input{
+    flex:1; border:none; background:transparent; color:var(--text);
+    font-size:16px; outline:none; font-family:inherit; padding:8px 0;
+  }
+  .mic{
+    width:46px;height:46px;border-radius:50%;border:none;flex:0 0 auto;
+    background:var(--accent); color:#fff; font-size:20px; cursor:pointer;
+    display:flex;align-items:center;justify-content:center; transition:.15s;
+  }
+  .mic.rec{background:#ff4d5e; animation:pulse 1.2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,77,94,.5);}70%{box-shadow:0 0 0 14px rgba(255,77,94,0);}100%{box-shadow:0 0 0 0 rgba(255,77,94,0);}}
+  .add{
+    width:46px;height:46px;border-radius:50%;border:none;flex:0 0 auto;
+    background:var(--accent-soft); color:var(--accent); font-size:24px; cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .daysel{
+    display:flex; gap:6px; overflow-x:auto; padding:0 2px 10px; -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .daysel::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:0 0 auto; padding:7px 13px; border-radius:12px; background:var(--card);
+    border:1px solid var(--line); font-size:13px; color:var(--text); cursor:pointer;
+    white-space:nowrap; transition:.12s;
+  }
+  .chip.sel{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .chip small{display:block; font-size:10px; opacity:.7;}
+  .hint{
+    text-align:center; font-size:12px; color:var(--muted); padding:6px 20px 2px;
+  }
+  .toast{
+    position:fixed; bottom:110px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--text); color:var(--bg); padding:9px 16px; border-radius:20px;
+    font-size:13px; opacity:0; transition:.25s; pointer-events:none; z-index:30;
+    box-shadow:var(--shadow);
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<header>
+  <h1>Мой план 📅</h1>
+  <div class="sub" id="sub">Задачи по неделям</div>
+</header>
+
+<div class="wrap" id="list"></div>
+
+<div class="composer">
+  <div class="daysel" id="daysel"></div>
+  <div class="bar">
+    <input id="input" type="text" placeholder="Новая задача…" autocomplete="off" enterkeyhint="done">
+    <button class="mic" id="mic" title="Голос">🎤</button>
+    <button class="add" id="add" title="Добавить">＋</button>
+  </div>
+  <div class="hint" id="hint"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+const DAYS_SHORT = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const MONTHS = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+
+let tasks = load();
+let selDate = todayKey();
+
+function load(){ try{ return JSON.parse(localStorage.getItem('planner_tasks')||'[]'); }catch(e){ return []; } }
+function save(){ localStorage.setItem('planner_tasks', JSON.stringify(tasks)); }
+
+function todayKey(){ return dateKey(new Date()); }
+function dateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parseKey(k){ const [y,m,d]=k.split('-').map(Number); return new Date(y,m-1,d); }
+// Monday index 0..6
+function dow(d){ return (d.getDay()+6)%7; }
+function mondayOf(d){ const m=new Date(d); m.setDate(d.getDate()-dow(d)); m.setHours(0,0,0,0); return m; }
+function weekKey(d){ return dateKey(mondayOf(d)); }
+
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600);
+}
+
+function renderDaySel(){
+  const el=document.getElementById('daysel'); el.innerHTML='';
+  const base=new Date(); base.setHours(0,0,0,0);
+  for(let i=0;i<14;i++){
+    const d=new Date(base); d.setDate(base.getDate()+i);
+    const k=dateKey(d);
+    const chip=document.createElement('div');
+    chip.className='chip'+(k===selDate?' sel':'');
+    let top = i===0?'Сегодня' : i===1?'Завтра' : DAYS_SHORT[dow(d)];
+    chip.innerHTML = top+'<small>'+d.getDate()+' '+MONTHS[d.getMonth()]+'</small>';
+    chip.onclick=()=>{ selDate=k; renderDaySel(); document.getElementById('input').focus(); };
+    el.appendChild(chip);
+  }
+}
+
+function render(){
+  const list=document.getElementById('list'); list.innerHTML='';
+  const active=tasks.filter(t=>true);
+  if(tasks.length===0){
+    list.innerHTML='<div class="empty"><span class="big">🎤</span>Пока пусто.<br>Скажи или запиши первую задачу — она встанет в нужный день недели.</div>';
+    updSub(); return;
+  }
+  // group by week
+  const weeks={};
+  for(const t of tasks){
+    const wk=weekKey(parseKey(t.date));
+    (weeks[wk]=weeks[wk]||[]).push(t);
+  }
+  const nowWk=weekKey(new Date());
+  const keys=Object.keys(weeks).sort();
+  for(const wk of keys){
+    const mon=parseKey(wk); const sun=new Date(mon); sun.setDate(mon.getDate()+6);
+    const diff=Math.round((mon-parseKey(nowWk))/(7*864e5));
+    let title = diff===0?'Эта неделя' : diff===1?'Следующая неделя' : diff===-1?'Прошлая неделя' : diff>0?('Через '+diff+' нед.'):(Math.abs(diff)+' нед. назад');
+    const wEl=document.createElement('div'); wEl.className='week';
+    const done=weeks[wk].filter(t=>t.done).length;
+    wEl.innerHTML='<div class="week-head"><span class="week-title">'+title+'</span>'+
+      '<span class="week-range">'+mon.getDate()+' '+MONTHS[mon.getMonth()]+' – '+sun.getDate()+' '+MONTHS[sun.getMonth()]+'</span>'+
+      '<span class="week-count">'+done+'/'+weeks[wk].length+'</span></div>';
+    // group by day within week
+    const byDay={};
+    for(const t of weeks[wk]) (byDay[t.date]=byDay[t.date]||[]).push(t);
+    const dayKeys=Object.keys(byDay).sort();
+    for(const dk of dayKeys){
+      const d=parseKey(dk);
+      const isToday=dk===todayKey();
+      const dl=document.createElement('div');
+      dl.className='day-label'+(isToday?' today':'');
+      dl.innerHTML=(isToday?'<span class="dot"></span>':'')+DAYS[dow(d)]+', '+d.getDate()+' '+MONTHS[d.getMonth()]+(isToday?' · сегодня':'');
+      wEl.appendChild(dl);
+      for(const t of byDay[dk]){
+        const el=document.createElement('div'); el.className='task'+(t.done?' done':'');
+        const chk=document.createElement('div'); chk.className='check'+(t.done?' on':''); chk.textContent=t.done?'✓':'';
+        chk.onclick=()=>{ t.done=!t.done; save(); render(); };
+        const tx=document.createElement('div'); tx.className='task-text'; tx.textContent=t.text;
+        const del=document.createElement('div'); del.className='del'; del.textContent='×';
+        del.onclick=()=>{ if(confirm('Удалить задачу?')){ tasks=tasks.filter(x=>x!==t); save(); render(); } };
+        el.append(chk,tx,del); wEl.appendChild(el);
+      }
+    }
+    list.appendChild(wEl);
+  }
+  updSub();
+}
+
+function updSub(){
+  const left=tasks.filter(t=>!t.done).length;
+  document.getElementById('sub').textContent = tasks.length? (left? ('Осталось задач: '+left) : 'Всё выполнено 🎉') : 'Задачи по неделям';
+}
+
+function addTask(text){
+  text=(text||'').trim(); if(!text) return;
+  tasks.push({text, date:selDate, done:false, id:Date.now()+Math.random()});
+  save(); render();
+  const d=parseKey(selDate);
+  toast('Добавлено: '+DAYS_SHORT[dow(d)]+' '+d.getDate()+' '+MONTHS[d.getMonth()]);
+}
+
+const input=document.getElementById('input');
+document.getElementById('add').onclick=()=>{ addTask(input.value); input.value=''; input.focus(); };
+input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ addTask(input.value); input.value=''; }});
+
+// ---- Voice ----
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const mic=document.getElementById('mic'); const hint=document.getElementById('hint');
+let rec=null, recording=false;
+
+if(SR){
+  hint.textContent='🎤 нажми и говори задачу';
+  mic.onclick=()=>{
+    if(recording){ rec&&rec.stop(); return; }
+    rec=new SR(); rec.lang='ru-RU'; rec.interimResults=true; rec.continuous=false;
+    let finalText='';
+    rec.onstart=()=>{ recording=true; mic.classList.add('rec'); mic.textContent='⏹'; hint.textContent='Слушаю…'; input.value=''; };
+    rec.onresult=(e)=>{
+      let interim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const r=e.results[i];
+        if(r.isFinal) finalText+=r[0].transcript; else interim+=r[0].transcript;
+      }
+      input.value=(finalText+interim).trim();
+    };
+    rec.onerror=(e)=>{ hint.textContent = e.error==='not-allowed'?'Нет доступа к микрофону — разреши в настройках Safari':'Не расслышал, попробуй ещё'; };
+    rec.onend=()=>{
+      recording=false; mic.classList.remove('rec'); mic.textContent='🎤';
+      hint.textContent='🎤 нажми и говори задачу';
+      if(input.value.trim()){ addTask(input.value); input.value=''; }
+    };
+    try{ rec.start(); }catch(e){}
+  };
+}else{
+  // Fallback: use the iPhone keyboard's dictation mic
+  hint.innerHTML='🎤 Голос: нажми поле ввода и <b>микрофон на клавиатуре</b> айфона';
+  mic.onclick=()=>{ input.focus(); toast('Нажми 🎤 на клавиатуре айфона'); };
+}
+
+renderDaySel();
+render();
+</script>
+</body>
+</html>
