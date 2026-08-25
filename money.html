@@ -419,7 +419,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 27</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 28</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -745,11 +745,12 @@ const SEED_CATS=[
   {id:'transport',name:'Транспорт',icon:'🚌',type:'expense',group:'Основное'},
   {id:'svyaz',name:'Связь, интернет',icon:'📱',type:'expense',group:'Основное'},
   {id:'svet',name:'Свет, газ',icon:'💡',type:'expense',group:'Основное'},
-  {id:'zp',name:'Зарплата',icon:'💼',type:'income',group:'Доход'},
-  {id:'avans',name:'Аванс',icon:'💰',type:'income',group:'Доход'},
+  {id:'zp',name:'Зарплата и аванс',icon:'💼',type:'income',group:'Доход'},
+  {id:'muzh',name:'Помощь мужа',icon:'💝',type:'income',group:'Доход'},
+  {id:'podrabotka',name:'Дополнительный заработок',icon:'💰',type:'income',group:'Доход'},
   {id:'prochie_in',name:'Прочие',icon:'•••',type:'income',group:'Доход'}
 ];
-const OLD_MAP={food:'produkty',cafe:'dosug',transport:'transport',auto:'transport',home:'svet',health:'apteka',beauty:'uhod',clothes:'odezhda',shopping:'prochie',telecom:'svyaz',fun:'dosug',kids:'prochie',pets:'zhivotnye',other:'prochie',salary:'zp',side:'prochie_in',transfer_in:'prochie_in',refund:'prochie_in',other_in:'prochie_in'};
+const OLD_MAP={food:'produkty',cafe:'dosug',transport:'transport',auto:'transport',home:'svet',health:'apteka',beauty:'uhod',clothes:'odezhda',shopping:'prochie',telecom:'svyaz',fun:'dosug',kids:'prochie',pets:'zhivotnye',other:'prochie',salary:'zp',avans:'zp',side:'podrabotka',transfer_in:'prochie_in',refund:'prochie_in',other_in:'prochie_in'};
 
 const LS_KEY='bcMoney.v2';
 function load(){
@@ -791,6 +792,24 @@ if(!db.accV4){
   if(!db.accounts.some(a=>/долг/i.test(a.name)))db.accounts.push({id:'a4',name:'Долги',icon:'🤝',start:0,tail:'',isDebt:true});
   else{const d=db.accounts.find(a=>/долг/i.test(a.name));if(d)d.isDebt=true;}
   db.accV4=true;
+  try{save();}catch(e){}
+}
+if(!db.incCatsV28){
+  // Аванс объединён с зарплатой; добавлены «Помощь мужа» и «Дополнительный заработок»
+  const zp=db.cats.find(c=>c.id==='zp');
+  if(zp)zp.name='Зарплата и аванс';
+  db.cats=db.cats.filter(c=>c.id!=='avans');
+  const addIn=(id,name,icon)=>{if(!db.cats.some(c=>c.id===id))db.cats.push({id,name,icon,type:'income',group:'Доход'});};
+  addIn('muzh','Помощь мужа','💝');
+  addIn('podrabotka','Дополнительный заработок','💰');
+  for(const t of (db.txs||[]))if(t.catId==='avans')t.catId='zp';
+  for(const r of (db.rems||[]))if(r.catId==='avans')r.catId='zp';
+  for(const k in (db.merchantMap||{}))if(db.merchantMap[k]==='avans')db.merchantMap[k]='zp';
+  if(db.budgets&&db.budgets.avans!==undefined){
+    db.budgets.zp=(db.budgets.zp||0)+db.budgets.avans;
+    delete db.budgets.avans;
+  }
+  db.incCatsV28=true;
   try{save();}catch(e){}
 }
 if(!db.savRemV6){
