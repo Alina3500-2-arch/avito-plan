@@ -426,7 +426,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 30</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 31</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -1229,14 +1229,14 @@ function renderSum(){
   const saved=inMonth.filter(t=>t.type==='transfer'&&savAccIds.includes(t.toAccId)).reduce((s,t)=>s+t.amount,0);
   if(savAccIds.length)html+='<div class="save-tile piggy">🐷 Отложила на сберегательный: '+fmt(saved)+'</div>';
   html+='<div class="sum-head"><span class="t" style="color:var(--green)">ДОХОД</span><span class="v">'+fmt(incTotal)+'</span></div>';
-  for(const c of incCats)html+=catRow(c,sums[c.id]||0,'inc',c.id);
+  for(const c of incCats.filter(c=>sums[c.id]).sort((a,b)=>(sums[b.id]||0)-(sums[a.id]||0)))html+=catRow(c,sums[c.id],'inc',c.id);
   html+='<div class="sum-head"><span class="t exp" style="color:var(--blue)">РАСХОД</span><span class="v">'+fmt(expTotal)+'</span></div>';
   for(const g of GROUPS){
-    const gc=expCats.filter(c=>c.group===g);
+    const gc=expCats.filter(c=>c.group===g&&sums[c.id]).sort((a,b)=>sums[b.id]-sums[a.id]);
     if(!gc.length)continue;
-    const gt=gc.reduce((s,c)=>s+(sums[c.id]||0),0);
+    const gt=gc.reduce((s,c)=>s+sums[c.id],0);
     html+='<div class="grp"><span>'+esc(g)+'</span><span>'+fmt(gt)+'</span></div>';
-    for(const c of gc)html+=catRow(c,sums[c.id]||0,'exp',c.id);
+    for(const c of gc)html+=catRow(c,sums[c.id],'exp',c.id);
   }
   if(sums['_none'])html+=catRow({icon:'📦',name:'Без категории'},sums['_none'],'exp');
   $('#sumBody').innerHTML=html;
