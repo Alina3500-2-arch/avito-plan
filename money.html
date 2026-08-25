@@ -117,7 +117,8 @@ textarea.f-in{min-height:80px;resize:vertical}
 .debt-total{text-align:center;font-size:15px;font-weight:700;color:var(--red);background:#FDECEA;border-radius:12px;padding:11px;margin:12px 0}
 .debt-zero{text-align:center;font-size:15px;font-weight:700;color:var(--green);background:#EAF6EC;border-radius:12px;padding:11px;margin:12px 0}
 .seg{display:flex;background:var(--pill);border-radius:12px;padding:3px;margin-bottom:4px}
-.seg button{flex:1;border:none;background:none;border-radius:10px;padding:9px 4px;font-size:14px;font-weight:700;color:var(--ink3);cursor:pointer}
+.seg button{flex:1;min-width:0;border:none;background:none;border-radius:10px;padding:9px 2px;font-size:13px;font-weight:700;color:var(--ink3);cursor:pointer;white-space:nowrap}
+#chartPeriodSeg button{font-size:12px;padding:9px 1px}
 .seg button.on{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 /* FULLSCREEN FORM */
 .fs{position:fixed;inset:0;z-index:85;background:#fff;display:none;flex-direction:column}
@@ -343,8 +344,8 @@ textarea.f-in{min-height:80px;resize:vertical}
       <button class="nav" id="chNext">›</button>
     </div>
     <div class="seg" id="chartPeriodSeg">
-      <button data-p="1">Месяц</button>
-      <button data-p="3" class="on">3 месяца</button>
+      <button data-p="1" class="on">Месяц</button>
+      <button data-p="3">3 мес.</button>
       <button data-p="6">Полгода</button>
       <button data-p="12">Год</button>
       <button data-p="0">Свой</button>
@@ -425,7 +426,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 29</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 30</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -758,6 +759,7 @@ const SEED_CATS=[
 ];
 const OLD_MAP={food:'produkty',cafe:'dosug',transport:'transport',auto:'transport',home:'svet',health:'apteka',beauty:'uhod',clothes:'odezhda',shopping:'prochie',telecom:'svyaz',fun:'dosug',kids:'prochie',pets:'zhivotnye',other:'prochie',salary:'zp',avans:'zp',side:'podrabotka',transfer_in:'prochie_in',refund:'prochie_in',other_in:'prochie_in'};
 
+const MUZH_RE=/максим\w*\s*ч|чепер/i;
 const LS_KEY='bcMoney.v2';
 function load(){
   try{
@@ -816,6 +818,14 @@ if(!db.incCatsV28){
     delete db.budgets.avans;
   }
   db.incCatsV28=true;
+  try{save();}catch(e){}
+}
+if(!db.muzhV29){
+  // переводы от Максима Ч. — это муж: переносим из «Прочих» в «Помощь мужа»
+  const isMuzh=t=>MUZH_RE.test((t.merchant||'')+' '+(t.note||''));
+  for(const t of (db.txs||[]))if(t.type==='income'&&isMuzh(t))t.catId='muzh';
+  for(const k in (db.merchantMap||{}))if(MUZH_RE.test(k))db.merchantMap[k]='muzh';
+  db.muzhV29=true;
   try{save();}catch(e){}
 }
 if(!db.savRemV6){
@@ -938,7 +948,8 @@ function parseSms(text){
   merchant=merchant.replace(/^(в|на|за)\s+/i,'').slice(0,48).trim();
   let catId=null;
   const known=db.merchantMap[normMerchant(merchant)];
-  if(known&&catOf(known))catId=known;
+  if(type==='income'&&MUZH_RE.test(merchant))catId='muzh';
+  else if(known&&catOf(known))catId=known;
   else{for(const [re,id] of CAT_HINTS){if(re.test(low)||re.test(merchant.toLowerCase())){catId=id;break;}}}
   let accId=db.accounts[0]?.id;
   if(tail){const a=db.accounts.find(x=>x.tail===tail);if(a)accId=a.id;}
@@ -1277,7 +1288,7 @@ function monthAgg(y,m){
   }
   return {inc,exp};
 }
-let chartPeriod=3;
+let chartPeriod=1;
 let chartEndDate=new Date();chartEndDate.setDate(1);
 let expandedChartCat=null;
 let expandedIncCat=null;
