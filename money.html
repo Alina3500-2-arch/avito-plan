@@ -426,7 +426,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 31</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 32</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -967,6 +967,44 @@ function reconcileInboxWithTx(rec){
     const sameType=(p.type==='income')===(rec.type==='income');
     return !(sameDay&&sameAmt&&sameAcc&&sameType);
   });
+}
+
+/* После записи операции закрываем подходящий платёж, но не всю серию. */
+function reminderNameScore(rec,r){
+  const txName=normMerchant((rec.merchant||'')+' '+(rec.note||''));
+  const remName=normMerchant((r.name||'')+' '+(r.note||''));
+  if(!txName||!remName)return 0;
+  if(txName.includes(remName)||remName.includes(txName))return 6;
+  const txWords=new Set(txName.split(' ').filter(w=>w.length>=4));
+  return remName.split(' ').some(w=>w.length>=4&&txWords.has(w))?4:0;
+}
+function reconcileReminderWithTx(rec){
+  if(!rec||rec.type==='income')return null;
+  const txDay=keyToDate(dayKey(rec.ts));
+  const scored=(db.rems||[]).filter(r=>r.type===rec.type).map(r=>{
+    const days=Math.abs(Math.round((keyToDate(r.due)-txDay)/864e5));
+    if(days>7)return null;
+    const amountDiff=Math.abs((+r.amount||0)-(+rec.amount||0));
+    const exactAmount=amountDiff<=Math.max(1,(+r.amount||0)*.005);
+    const closeAmount=amountDiff<=Math.max(100,(+r.amount||0)*.05);
+    const nameScore=reminderNameScore(rec,r);
+    if(!exactAmount&&!nameScore)return null;
+    let score=exactAmount?6:(closeAmount?2:0);
+    score+=nameScore;
+    if(r.catId&&rec.catId&&r.catId===rec.catId)score+=2;
+    if(r.accId&&rec.accId&&r.accId===rec.accId)score+=1;
+    score+=days<=1?3:days<=3?2:1;
+    return {r,score,days};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score||a.days-b.days);
+  if(!scored.length||scored[0].score<7)return null;
+  if(scored[1]&&scored[1].score===scored[0].score&&scored[1].days===scored[0].days)return null;
+  const r=scored[0].r;
+  const nd=nextDue(r);
+  if(nd){
+    const i=db.rems.findIndex(x=>x.id===r.id);
+    if(i>=0)db.rems[i]={...db.rems[i],due:nd};
+  }else db.rems=db.rems.filter(x=>x.id!==r.id);
+  return {id:r.id,name:r.name,nextDue:nd};
 }
 
 /* ================= RENDER: ОПЕРАЦИИ ================= */
@@ -1880,7 +1918,10 @@ $('#fSave').addEventListener('click',()=>{
   };
   if(sheetType==='transfer'&&rec.accId===rec.toAccId){alert('Выберите разные счета');return;}
   if(editTx){const i=db.txs.findIndex(t=>t.id===editTx.id);db.txs[i]=rec;}
-  else db.txs.push(rec);
+  else{
+    db.txs.push(rec);
+    reconcileReminderWithTx(rec);
+  }
   if(rec.merchant&&rec.catId)db.merchantMap[normMerchant(rec.merchant)]=rec.catId;
   if(pendingSms){
     db.seenSms.push(smsHash(pendingSms.raw));db.seenSms=db.seenSms.slice(-300);
@@ -2254,6 +2295,7 @@ $('#cDel').addEventListener('click',()=>{
 function inboxAdd(p){
   const h=smsHash(p.raw);
   if(db.seenSms.includes(h))return false;
+  if(pendingSms&&smsHash(pendingSms.raw)===h)return false;
   if(db.inbox.some(x=>x.raw===p.raw))return false;
   db.inbox.push({id:uid(),raw:p.raw,ts:Date.now()});
   save();
@@ -2266,7 +2308,7 @@ function importInboxTexts(arr){
       if(p)inboxAdd(p);
     }
     rerender();
-    if(db.inbox.length){
+    if(db.inbox.length&&!document.querySelector('.fs.on')){
       document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
       openInboxSheet();
     }
@@ -2309,7 +2351,9 @@ $('#ibAllKnown').addEventListener('click',()=>{
   for(const it of [...db.inbox]){
     const p=parseSms(it.raw);
     if(p&&p.catId){
-      db.txs.push({id:uid(),ts:it.ts,type:p.type,amount:p.amount,catId:p.catId,accId:p.accId,toAccId:null,merchant:p.merchant,note:''});
+      const rec={id:uid(),ts:it.ts,type:p.type,amount:p.amount,catId:p.catId,accId:p.accId,toAccId:null,merchant:p.merchant,note:''};
+      db.txs.push(rec);
+      reconcileReminderWithTx(rec);
       db.seenSms.push(smsHash(p.raw));
       db.inbox=db.inbox.filter(x=>x.id!==it.id);
       n++;
@@ -2327,6 +2371,7 @@ function handleSmsText(text,{fromUrl=false}={}){
   if(!p){alert('Не получилось найти сумму в тексте. Проверьте, что это СМС об операции.');return;}
   if(fromUrl&&db.seenSms.includes(smsHash(p.raw)))return;
   document.querySelectorAll('.sheet').forEach(s=>s.classList.remove('on'));
+  $('#ovl').classList.remove('on');
   openTxSheet(null,p);
 }
 $('#pasteGo').addEventListener('click',()=>{
