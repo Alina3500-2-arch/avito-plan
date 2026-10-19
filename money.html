@@ -426,7 +426,7 @@ textarea.f-in{min-height:80px;resize:vertical}
 
 <!-- DRAWER -->
 <nav class="drawer" id="drawer">
-  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 32</div></div>
+  <div class="dr-head"><div class="nm">Мои деньги</div><div class="sb">версия 33</div></div>
   <button class="dr-item" data-act="inbox"><span class="ic">📥</span>Незаписанные операции</button>
   <button class="dr-item" data-act="accs"><span class="ic">🏦</span>Счета</button>
   <button class="dr-item" data-act="cats"><span class="ic">🧺</span>Категории</button>
@@ -875,7 +875,37 @@ function syncNativeReminders(){
     }
   }catch(e){}
 }
-function save(){localStorage.setItem(LS_KEY,JSON.stringify(db));syncNativeReminders();}
+function save(){localStorage.setItem(LS_KEY,JSON.stringify(db));syncNativeReminders();pushEarnedToPlanner();}
+
+/* ===== ЗАРАБОТОК МЕСЯЦА → ПЛАНИРОВЩИК =====
+   Планировщик — отдельное приложение со своим хранилищем, напрямую наши данные
+   он не видит. Поэтому кладём ОДНО число (заработано с 1-го числа) в то же
+   облачное хранилище, куда Планировщик уже шлёт данные своих виджетов, и он
+   читает его в цели «Заработать в этом месяце».
+   В заработок входит весь доход, КРОМЕ помощи мужа (категория muzh). */
+const PLANNER_SYNC='https://trener-aliny-widget.alina-3500-2.workers.dev';
+const NOT_EARNED=['muzh'];
+function monthKeyOf(ts){const d=new Date(ts);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function earnedThisMonth(){
+  const mk=monthKeyOf(Date.now());
+  return (db.txs||[]).reduce((sum,t)=>(t.type==='income'&&NOT_EARNED.indexOf(t.catId)<0&&monthKeyOf(t.ts)===mk)?sum+(Number(t.amount)||0):sum,0);
+}
+let plannerTimer=null;
+function pushEarnedToPlanner(){
+  clearTimeout(plannerTimer);
+  plannerTimer=setTimeout(async()=>{
+    const money={month:monthKeyOf(Date.now()),earned:Math.round(earnedThisMonth()),updatedAt:Date.now()};
+    let payload=null;
+    try{
+      const r=await fetch(PLANNER_SYNC+'/widget/aline',{cache:'no-store'});
+      if(r.ok){const j=await r.json();payload=(j&&typeof j==='object'&&!j.error)?j:{};}
+      else if(r.status===404)payload={};
+    }catch(e){payload=null;}
+    if(!payload)return;            // нет связи — не затираем чужие данные, отправим в следующий раз
+    payload.money=money;
+    try{await fetch(PLANNER_SYNC+'/widget/sync',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});}catch(e){}
+  },1500);
+}
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 /* ================= HELPERS ================= */
@@ -2452,6 +2482,7 @@ function rerender(){
 }
 rerender();
 syncNativeReminders();
+pushEarnedToPlanner();
 (function(){
   const q=new URLSearchParams(location.search);
   const sms=q.get('sms')||q.get('text');
